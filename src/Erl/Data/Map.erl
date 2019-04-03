@@ -8,7 +8,7 @@ insert(K, V, M) -> M#{ K => V}.
 
 lookupImpl(Nothing, Just, K, M) ->
     case maps:is_key(K, M) of
-        true -> Just(maps:lookup(K, M));
+        true -> Just(maps:get(K, M));
         false -> Nothing
     end.
 
