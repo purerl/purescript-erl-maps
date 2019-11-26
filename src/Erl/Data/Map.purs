@@ -6,6 +6,7 @@ module Erl.Data.Map
   , singleton
   , lookup
   , values
+  , mapWithKey
   ) where
 
 import Prelude
