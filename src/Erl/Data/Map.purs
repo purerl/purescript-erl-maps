@@ -50,20 +50,11 @@ foreign import mapWithKeyImpl :: forall k a b. (Fn2 k a b) -> Map k a -> Map k b
 mapWithKey :: forall k a b. (k -> a -> b) -> Map k a -> Map k b
 mapWithKey f m = mapWithKeyImpl (mkFn2 f) m
 
-foreign import memberImpl :: forall k a. k -> Map k a -> Boolean
+foreign import member :: forall k a. k -> Map k a -> Boolean
 
-member :: forall k a. k -> Map k a -> Boolean
-member = memberImpl
+foreign import difference :: forall k a b. Map k a -> Map k b -> Map k a
 
-foreign import differenceImpl :: forall k a b. Map k a -> Map k b -> Map k a
-
-difference :: forall k a b. Map k a -> Map k b -> Map k a
-difference = differenceImpl
-
-foreign import deleteImpl :: forall k a. k -> Map k a -> Map k a
-
-delete :: forall k a. k -> Map k a -> Map k a
-delete = deleteImpl
+foreign import delete :: forall k a. k -> Map k a -> Map k a
 
 foreign import values :: forall a b. Map a b -> List b
 

@@ -5,11 +5,11 @@
          lookupImpl/4,
          values/1,
          keys/1,
-         memberImpl/2,
+         member/2,
          mapImpl/2,
          mapWithKeyImpl/2,
-         deleteImpl/2,
-         differenceImpl/2,
+         delete/2,
+         difference/2,
          foldMImpl/4]).
 
 empty() -> #{}.
@@ -36,11 +36,11 @@ foldMImpl(Bind, F, MZ, M) ->
         (Bind(Acc))(fun (Z) -> ((F(Z))(K))(V) end)
     end, MZ, M).
 
-memberImpl(K, M) -> maps:is_key(K, M).
+member(K, M) -> maps:is_key(K, M).
 
-deleteImpl(K, M) -> maps:remove(K, M).
+delete(K, M) -> maps:remove(K, M).
 
-differenceImpl(M1, M2) ->
+difference(M1, M2) ->
   maps:fold(fun(M2Key, _, Acc) ->
                 maps:remove(M2Key, Acc)
             end,
