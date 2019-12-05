@@ -6,7 +6,11 @@ module Erl.Data.Map
   , singleton
   , lookup
   , values
+  , keys
   , mapWithKey
+  , member
+  , delete
+  , difference
   , fromFoldable
   ) where
 
@@ -46,7 +50,15 @@ foreign import mapWithKeyImpl :: forall k a b. (Fn2 k a b) -> Map k a -> Map k b
 mapWithKey :: forall k a b. (k -> a -> b) -> Map k a -> Map k b
 mapWithKey f m = mapWithKeyImpl (mkFn2 f) m
 
+foreign import member :: forall k a. k -> Map k a -> Boolean
+
+foreign import difference :: forall k a b. Map k a -> Map k b -> Map k a
+
+foreign import delete :: forall k a. k -> Map k a -> Map k a
+
 foreign import values :: forall a b. Map a b -> List b
+
+foreign import keys :: forall a b. Map a b -> List a
 
 -- Folds taken from purescript-foreign-object
 
