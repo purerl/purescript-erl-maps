@@ -3,10 +3,12 @@ module Test.Main where
 import Prelude
 
 import Data.Maybe (Maybe(..))
+import Effect (Effect)
 import Erl.Data.List (nil, (:))
 import Erl.Data.Map as Map
 import Test.Assert (assertEqual)
 
+main :: Effect Unit
 main = do
   assertEqual { actual: Map.lookup 42 (Map.insert 42 "abc" Map.empty)
               , expected: Just "abc"

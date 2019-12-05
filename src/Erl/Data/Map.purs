@@ -72,19 +72,13 @@ fromFoldable :: forall f k v. Ord k => Foldable f => f (Tuple k v) -> Map k v
 fromFoldable = foldl (\m (Tuple k v) -> insert k v m) empty
 
 instance foldableMap :: Foldable (Map a) where
-  foldr :: forall a b. (a -> b -> b) -> b -> f a -> b
   foldr f z m = foldr f z (values m)
-  foldl :: forall a b. (b -> a -> b) -> b -> f a -> b
   foldl f = fold (\z _ -> f z)
-  foldMap :: forall a m. Monoid m => (a -> m) -> f a -> m
   foldMap f = foldMap (const f)
 
 instance foldableWithIndexMap :: FoldableWithIndex a (Map a) where
-  foldrWithIndex :: forall a b. (i -> a -> b -> b) -> b -> f a -> b
   foldrWithIndex f = fold (\b i a -> f i a b)
-  foldlWithIndex :: forall a b. (i -> b -> a -> b) -> b -> f a -> b
   foldlWithIndex f = fold (\b i a -> f i b a)
-  foldMapWithIndex :: forall a m. Monoid m => (i -> a -> m) -> f a -> m
   foldMapWithIndex = foldMap
 
 instance traversableMap :: Traversable (Map a) where
