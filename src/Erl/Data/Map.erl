@@ -1,5 +1,14 @@
 -module(erl_data_map@foreign).
--export([empty/0, isEmpty/1, insert/3, lookupImpl/4, values/1, mapImpl/2, mapWithKeyImpl/2, foldMImpl/4]).
+-export([empty/0,
+         isEmpty/1,
+         insert/3,
+         lookupImpl/4,
+         values/1,
+         memberImpl/2,
+         mapImpl/2,
+         mapWithKeyImpl/2,
+         deleteImpl/2,
+         foldMImpl/4]).
 
 empty() -> #{}.
 isEmpty(M) -> M =:= #{}.
@@ -19,6 +28,10 @@ mapImpl(F, M) -> maps:map(fun (_K, V) -> F(V) end, M).
 mapWithKeyImpl(F, M) -> maps:map(F, M).
 
 foldMImpl(Bind, F, MZ, M) ->
-    maps:fold(fun (K, V, Acc) -> 
+    maps:fold(fun (K, V, Acc) ->
         (Bind(Acc))(fun (Z) -> ((F(Z))(K))(V) end)
     end, MZ, M).
+
+memberImpl(K, M) -> maps:is_key(K, M).
+
+deleteImpl(K, M) -> maps:remove(K, M).

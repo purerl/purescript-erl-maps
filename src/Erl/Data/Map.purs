@@ -7,6 +7,8 @@ module Erl.Data.Map
   , lookup
   , values
   , mapWithKey
+  , member
+  , delete
   , fromFoldable
   ) where
 
@@ -45,6 +47,16 @@ foreign import mapWithKeyImpl :: forall k a b. (Fn2 k a b) -> Map k a -> Map k b
 
 mapWithKey :: forall k a b. (k -> a -> b) -> Map k a -> Map k b
 mapWithKey f m = mapWithKeyImpl (mkFn2 f) m
+
+foreign import memberImpl :: forall k a. k -> Map k a -> Boolean
+
+member :: forall k a. k -> Map k a -> Boolean
+member = memberImpl
+
+foreign import deleteImpl :: forall k a. k -> Map k a -> Map k a
+
+delete :: forall k a. k -> Map k a -> Map k a
+delete = deleteImpl
 
 foreign import values :: forall a b. Map a b -> List b
 
