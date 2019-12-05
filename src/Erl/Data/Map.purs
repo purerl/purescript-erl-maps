@@ -6,9 +6,11 @@ module Erl.Data.Map
   , singleton
   , lookup
   , values
+  , keys
   , mapWithKey
   , member
   , delete
+  , difference
   , fromFoldable
   ) where
 
@@ -53,12 +55,19 @@ foreign import memberImpl :: forall k a. k -> Map k a -> Boolean
 member :: forall k a. k -> Map k a -> Boolean
 member = memberImpl
 
+foreign import differenceImpl :: forall k a b. Map k a -> Map k b -> Map k a
+
+difference :: forall k a b. Map k a -> Map k b -> Map k a
+difference = differenceImpl
+
 foreign import deleteImpl :: forall k a. k -> Map k a -> Map k a
 
 delete :: forall k a. k -> Map k a -> Map k a
 delete = deleteImpl
 
 foreign import values :: forall a b. Map a b -> List b
+
+foreign import keys :: forall a b. Map a b -> List a
 
 -- Folds taken from purescript-foreign-object
 
