@@ -83,18 +83,10 @@ foldM f z = foldMImpl bind f (pure z)
 fromFoldable :: forall f k v. Ord k => Foldable f => f (Tuple k v) -> Map k v
 fromFoldable = foldl (\m (Tuple k v) -> insert k v m) empty
 
---foldr :: forall a b. (a -> b -> b) -> b -> f a -> b
---foldl :: forall a b. (b -> a -> b) -> b -> f a -> b
---foldMap :: forall a m. Monoid m => (a -> m) -> f a -> m
 instance foldableMap :: Foldable (Map a) where
   foldr f z m = foldr f z (values m)
   foldl f = fold (\z _ -> f z)
   foldMap f = foldMap (const f)
-
-
---foldrWithIndex :: forall a b. (i -> a -> b -> b) -> b -> f a -> b
---foldlWithIndex :: forall a b. (i -> b -> a -> b) -> b -> f a -> b
---foldMapWithIndex :: forall a m. Monoid m => (i -> a -> m) -> f a -> m
 
 instance foldableWithIndexMap :: FoldableWithIndex a (Map a) where
   foldrWithIndex f = fold (\b i a -> f i a b)
