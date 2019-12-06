@@ -1,6 +1,7 @@
 -module(erl_data_map@foreign).
 -export([empty/0,
          isEmpty/1,
+         size/1,
          insert/3,
          lookupImpl/4,
          values/1,
@@ -14,6 +15,8 @@
 
 empty() -> #{}.
 isEmpty(M) -> M =:= #{}.
+
+size(M) -> maps:size(M).
 
 insert(K, V, M) -> M#{ K => V}.
 

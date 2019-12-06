@@ -2,6 +2,7 @@ module Erl.Data.Map
   ( Map
   , empty
   , isEmpty
+  , size
   , insert
   , singleton
   , lookup
@@ -29,6 +30,8 @@ foreign import data Map :: Type -> Type -> Type
 foreign import empty :: forall a b. Map a b
 
 foreign import isEmpty :: forall a b. Map a b -> Boolean
+
+foreign import size :: forall a b. Map a b -> Int
 
 foreign import insert :: forall a b. a -> b -> Map a b -> Map a b
 
