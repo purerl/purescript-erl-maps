@@ -13,6 +13,7 @@ module Erl.Data.Map
   , delete
   , difference
   , fromFoldable
+  , alter
   ) where
 
 import Prelude
@@ -20,7 +21,7 @@ import Prelude
 import Data.Foldable (class Foldable, foldl, foldr)
 import Data.FoldableWithIndex (class FoldableWithIndex)
 import Data.Function.Uncurried (Fn2, mkFn2)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe')
 import Data.Traversable (class Traversable, sequenceDefault)
 import Data.Tuple (Tuple(..))
 import Erl.Data.List (List)
@@ -66,6 +67,9 @@ foreign import keys :: forall a b. Map a b -> List a
 -- Folds taken from purescript-foreign-object
 
 foreign import foldMImpl :: forall a b m z. (m -> (z -> m) -> m) -> (z -> a -> b -> m) -> m -> Map a b -> m
+
+alter :: forall k v. (Maybe v -> Maybe v) -> k -> Map k v -> Map k v
+alter f k m = lookup k m # f # maybe' (\_ -> delete k m) (\v -> insert k v m)
 
 -- | Fold the keys and values of a map
 fold :: forall a b z. (z -> a -> b -> z) -> z -> Map a b -> z
