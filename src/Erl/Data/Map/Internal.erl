@@ -14,6 +14,7 @@
          foldMImpl/4]).
 
 empty() -> #{}.
+
 isEmpty(M) -> M =:= #{}.
 
 size(M) -> maps:size(M).
