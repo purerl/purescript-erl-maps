@@ -26,10 +26,7 @@ import Data.Traversable (class Traversable, sequenceDefault)
 import Data.Tuple (Tuple(..))
 import Erl.Data.List (List)
 
-data Map k v
-  = Leaf
-  | Two (Map k v) k v (Map k v)
-  | Three (Map k v) k v (Map k v) k v (Map k v)
+foreign import data Map :: Type -> Type -> Type
 
 -- | An empty map
 foreign import empty :: forall a b. Map a b
@@ -71,6 +68,8 @@ foreign import foldMImpl
 foreign import lookupImpl :: forall a b z. z -> (b -> z) -> a -> Map a b -> z
 foreign import mapImpl :: forall k a b. (a -> b) -> Map k a -> Map k b
 foreign import mapWithKeyImpl :: forall k a b. (Fn2 k a b) -> Map k a -> Map k b
+-- foreign import unfoldrMapImpl :: forall a b t. Unfoldable t => (b -> Maybe (Tuple a b)) -> b -> t a
+
 
 instance functorMap :: Functor (Map a) where
   map f m = mapImpl f m
@@ -80,6 +79,9 @@ instance foldableMap :: Foldable (Map a) where
   foldl f = fold (\z _ -> f z)
   foldMap f = foldMap (const f)
 
+-- instance unfoldableMap :: Unfoldable (Map a) where
+--   unfoldr f m = ?v
+
 instance foldableWithIndexMap :: FoldableWithIndex a (Map a) where
   foldrWithIndex f = fold (\b i a -> f i a b)
   foldlWithIndex f = fold (\b i a -> f i b a)
@@ -88,6 +90,7 @@ instance foldableWithIndexMap :: FoldableWithIndex a (Map a) where
 instance traversableMap :: Traversable (Map a) where
   traverse f ms = fold (\acc k v -> flip (insert k) <$> acc <*> f v) (pure empty) ms
   sequence = sequenceDefault
+
 
 -- | Create a map with one key/value pair
 singleton :: forall a b. a -> b -> Map a b
@@ -137,3 +140,7 @@ fromFoldableWith f = foldl (\m (Tuple k v) -> alter (combine v) k m) empty where
 -- | Convert any indexed foldable collection into a map.
 fromFoldableWithIndex :: forall f k v. Ord k => FoldableWithIndex k f => f v -> Map k v
 fromFoldableWithIndex = foldlWithIndex (\k m v -> insert k v m) empty
+
+-- | Convert a map to an unfoldable structure of key/value pairs where the keys are in ascending order
+-- toUnfoldable :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
+-- toUnfoldable m = ?a
