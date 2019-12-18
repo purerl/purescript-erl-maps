@@ -12,7 +12,8 @@
          delete/2,
          difference/2,
          foldMImpl/4,
-         toUnfoldMImp/1]).
+         toUnfoldMImp/2,
+         toUnfoldableUnorderedImp/2]).
 
 empty() -> #{}.
 
@@ -41,7 +42,11 @@ foldMImpl(Bind, F, MZ, M) ->
         (Bind(Acc))(fun (Z) -> ((F(Z))(K))(V) end)
     end, MZ, M).
 
-toUnfoldMImp(M) -> lists:keysort(1, maps:to_list(M)).
+toUnfoldMImp(Tuple, M) -> lists:map(fun (a, b) ->
+    Tuple(a, b) end, lists:sort(maps:to_list(M))).
+
+toUnfoldableUnorderedImp(Tuple, M) -> lists:map(fun (a, b) ->
+    Tuple(a, b) end, maps:to_list(M)).
 
 member(K, M) -> maps:is_key(K, M).
 

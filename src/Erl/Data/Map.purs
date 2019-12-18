@@ -1,21 +1,33 @@
-module Erl.Data.Map
-  ( module Erl.Data.Map.Internal
-  ) where
+module Erl.Data.Map (
+  module Erl.Data.Map.Internal
+) where
 
 import Erl.Data.Map.Internal
   ( Map
-  , empty
-  , isEmpty
-  , size
-  , insert
-  , singleton
-  , lookup
-  , values
-  , keys
-  , mapWithKey
-  , member
+  , alter
   , delete
   , difference
+  , empty
+  , filter
+  , filterKeys
+  , filterWithKey
   , fromFoldable
-  , alter
+  , fromFoldableWith
+  , fromFoldableWithIndex
+  , insert
+  , isEmpty
+  , isSubmap
+  , keys
+  , lookup
+  , mapWithKey
+  , member
+  , singleton
+  , size
+  , toUnfoldable
+  , toUnfoldableUnordered
+  , union
+  , unionWith
+  , unions
+  , update
+  , values
   )
