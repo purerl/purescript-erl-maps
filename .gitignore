@@ -8,3 +8,6 @@
 /.vscode/
 /ebin/
 /.spago/
+/.editorconfig
+/shell.nix
+/src/.dir-locals.el
