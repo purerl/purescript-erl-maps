@@ -21,9 +21,11 @@ import Prelude
 import Data.Foldable (class Foldable, foldl, foldr)
 import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex)
 import Data.Function.Uncurried (Fn2, mkFn2)
+import Data.List.Lazy as LL
 import Data.Maybe (Maybe(..), maybe, maybe')
 import Data.Traversable (class Traversable, sequenceDefault)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(..), uncurry)
+import Data.Unfoldable (class Unfoldable)
 import Erl.Data.List (List)
 
 foreign import data Map :: Type -> Type -> Type
@@ -68,8 +70,7 @@ foreign import foldMImpl
 foreign import lookupImpl :: forall a b z. z -> (b -> z) -> a -> Map a b -> z
 foreign import mapImpl :: forall k a b. (a -> b) -> Map k a -> Map k b
 foreign import mapWithKeyImpl :: forall k a b. (Fn2 k a b) -> Map k a -> Map k b
--- foreign import unfoldrMapImpl :: forall a b t. Unfoldable t => (b -> Maybe (Tuple a b)) -> b -> t a
-
+foreign import toUnfoldMImp :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
 
 instance functorMap :: Functor (Map a) where
   map f m = mapImpl f m
@@ -142,5 +143,33 @@ fromFoldableWithIndex :: forall f k v. Ord k => FoldableWithIndex k f => f v -> 
 fromFoldableWithIndex = foldlWithIndex (\k m v -> insert k v m) empty
 
 -- | Convert a map to an unfoldable structure of key/value pairs where the keys are in ascending order
--- toUnfoldable :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
--- toUnfoldable m = ?a
+toUnfoldable :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
+toUnfoldable = toUnfoldMImp
+
+-- | Compute the union of two maps, using the specified function
+-- | to combine values for duplicate keys.
+unionWith :: forall k v. Ord k => (v -> v -> v) -> Map k v -> Map k v -> Map k v
+unionWith f m1 m2 = foldl go m2 (toUnfoldable m1 :: List (Tuple k v))
+  where
+  go m (Tuple k v) = alter (Just <<< maybe v (f v)) k m
+
+-- | Compute the union of two maps, preferring values from the first map in the case
+-- | of duplicate keys
+union :: forall k v. Ord k => Map k v -> Map k v -> Map k v
+union = unionWith const
+
+-- | Filter out those key/value pairs of a map for which a predicate
+-- | fails to hold.
+filterWithKey :: forall k v. Ord k => (k -> v -> Boolean) -> Map k v -> Map k v
+filterWithKey predicate =
+  fromFoldable <<< LL.filter (uncurry predicate) <<< toUnfoldable
+
+-- | Filter out those key/value pairs of a map for which a predicate
+-- | on the key fails to hold.
+filterKeys :: forall k. Ord k => (k -> Boolean) -> Map k ~> Map k
+filterKeys predicate = filterWithKey $ const <<< predicate
+
+-- | Filter out those key/value pairs of a map for which a predicate
+-- | on the value fails to hold.
+filter :: forall k v. Ord k => (v -> Boolean) -> Map k v -> Map k v
+filter predicate = filterWithKey $ const predicate

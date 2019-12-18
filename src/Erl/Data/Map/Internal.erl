@@ -11,7 +11,8 @@
          mapWithKeyImpl/2,
          delete/2,
          difference/2,
-         foldMImpl/4]).
+         foldMImpl/4,
+         toUnfoldMImp/1]).
 
 empty() -> #{}.
 
@@ -39,6 +40,8 @@ foldMImpl(Bind, F, MZ, M) ->
     maps:fold(fun (K, V, Acc) ->
         (Bind(Acc))(fun (Z) -> ((F(Z))(K))(V) end)
     end, MZ, M).
+
+toUnfoldMImp(M) -> lists:keysort(1, maps:to_list(M)).
 
 member(K, M) -> maps:is_key(K, M).
 
