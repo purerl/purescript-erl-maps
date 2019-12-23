@@ -16,10 +16,11 @@ import Erl.Data.Map.Internal
   , fromFoldableWithIndex
   , insert
   , isEmpty
-  , isSubmap
+  --, isSubmap
   , keys
   , lookup
   , mapWithKey
+  , mapMaybeWithKey
   , member
   , singleton
   , size

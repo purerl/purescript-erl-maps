@@ -12,10 +12,11 @@ module Erl.Data.Map.Internal
   , fromFoldableWithIndex
   , insert
   , isEmpty
-  , isSubmap
+  -- , isSubmap
   , keys
   , lookup
   , mapWithKey
+  , mapMaybeWithKey
   , member
   , singleton
   , size
@@ -33,7 +34,6 @@ import Prelude
 import Data.Foldable (class Foldable, foldl, foldr)
 import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex)
 import Data.Function.Uncurried (Fn2, mkFn2)
-import Data.List.Lazy as LL
 import Data.Maybe (Maybe(..), maybe, maybe')
 import Data.Traversable (class Traversable, sequenceDefault)
 import Data.Tuple (Tuple(..), uncurry)
@@ -118,6 +118,16 @@ update f k m = alter (maybe Nothing f) k m
 fold :: forall a b z. (z -> a -> b -> z) -> z -> Map a b -> z
 fold = foldMImpl ((#))
 
+
+-- | Fold the keys and values of a map, accumulating values using some
+-- | `Monoid`.
+mapMaybeWithKey :: forall k a b. (k -> a -> Maybe b) -> Map k a -> Map k b
+mapMaybeWithKey f = fold (\acc k v -> case f k v of
+                     Nothing -> acc
+                     Just v' -> insert k v' acc)
+                    empty
+
+
 -- | Fold the keys and values of a map, accumulating values using some
 -- | `Monoid`.
 foldMap :: forall a b m. Monoid m => (a -> b -> m) -> Map a b -> m
@@ -172,7 +182,7 @@ unions = foldl union empty
 -- | fails to hold.
 filterWithKey :: forall k v. Ord k => (k -> v -> Boolean) -> Map k v -> Map k v
 filterWithKey predicate =
-  fromFoldable <<< LL.filter (uncurry predicate) <<< toUnfoldable
+  fromFoldable <<< L.filter (uncurry predicate) <<< toUnfoldable
 
 -- | Filter out those key/value pairs of a map for which a predicate
 -- | on the key fails to hold.
@@ -184,7 +194,7 @@ filterKeys predicate = filterWithKey $ const <<< predicate
 filter :: forall k v. Ord k => (v -> Boolean) -> Map k v -> Map k v
 filter predicate = filterWithKey $ const predicate
 
--- | Test whether one map contains all of the keys and values contained in another map
-isSubmap :: forall k v. Ord k => Eq v => Map k v -> Map k v -> Boolean
-isSubmap m1 m2 = LL.all f $ (toUnfoldable m1 :: LL.List (Tuple k v))
-  where f (Tuple k v) = lookup k m2 == Just v
+-- -- | Test whether one map contains all of the keys and values contained in another map
+-- isSubmap :: forall k v. Ord k => Eq v => Map k v -> Map k v -> Boolean
+-- isSubmap m1 m2 = L.all f $ (toUnfoldable m1 :: LL.List (Tuple k v))
+--   where f (Tuple k v) = lookup k m2 == Just v

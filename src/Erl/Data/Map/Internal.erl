@@ -1,4 +1,4 @@
--module(erl_data_map@foreign).
+-module(erl_data_map_internal@foreign).
 -export([empty/0,
          isEmpty/1,
          size/1,
