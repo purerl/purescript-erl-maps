@@ -38,6 +38,7 @@ import Data.Maybe (Maybe(..), maybe, maybe')
 import Data.Traversable (class Traversable, sequenceDefault)
 import Data.Tuple (Tuple(..), uncurry)
 import Data.Unfoldable (class Unfoldable)
+import Erl.Data.List (List)
 import Erl.Data.List as L
 
 foreign import data Map :: Type -> Type -> Type
@@ -65,18 +66,18 @@ foreign import difference :: forall k a b. Map k a -> Map k b -> Map k a
 foreign import delete :: forall k a. k -> Map k a -> Map k a
 
 -- | Get a list of the values contained in a map
-foreign import values :: forall a b. Map a b -> L.List b
+foreign import values :: forall a b. Map a b -> List b
 
 -- | Get a list of the keys contained in a map
-foreign import keys :: forall a b. Map a b -> L.List a
+foreign import keys :: forall a b. Map a b -> List a
 
 -- Folds taken from purescript-foreign-object
 foreign import foldMImpl :: forall a b m z. (m -> (z -> m) -> m) -> (z -> a -> b -> m) -> m -> Map a b -> m
 foreign import lookupImpl :: forall a b z. z -> (b -> z) -> a -> Map a b -> z
 foreign import mapImpl :: forall k a b. (a -> b) -> Map k a -> Map k b
 foreign import mapWithKeyImpl :: forall k a b. (Fn2 k a b) -> Map k a -> Map k b
-foreign import toUnfoldMImp :: forall k v. (k -> v -> Tuple k v) -> Map k v -> L.List (Tuple k v)
-foreign import toUnfoldableUnorderedImp :: forall k v. (k -> v -> Tuple k v) -> Map k v -> L.List (Tuple k v)
+foreign import toUnfoldMImp :: forall k v. (k -> v -> Tuple k v) -> Map k v -> List (Tuple k v)
+foreign import toUnfoldableUnorderedImp :: forall k v. (k -> v -> Tuple k v) -> Map k v -> List (Tuple k v)
 
 instance functorMap :: Functor (Map a) where
   map f m = mapImpl f m
@@ -94,6 +95,12 @@ instance foldableWithIndexMap :: FoldableWithIndex a (Map a) where
 instance traversableMap :: Traversable (Map a) where
   traverse f ms = fold (\acc k v -> flip (insert k) <$> acc <*> f v) (pure empty) ms
   sequence = sequenceDefault
+
+instance showMap :: (Show k, Show v) => Show (Map k v) where
+  show m = "(fromFoldable " <> show (toList m) <> ")"
+    where
+      toList :: forall k v. Map k v -> List (Tuple k v)
+      toList = toUnfoldable
 
 -- | Create a map with one key/value pair
 singleton :: forall a b. a -> b -> Map a b
@@ -165,7 +172,7 @@ toUnfoldableUnordered = L.toUnfoldable <$> toUnfoldMImp Tuple
 -- | Compute the union of two maps, using the specified function
 -- | to combine values for duplicate keys.
 unionWith :: forall k v. Ord k => (v -> v -> v) -> Map k v -> Map k v -> Map k v
-unionWith f m1 m2 = foldl go m2 (toUnfoldable m1 :: L.List (Tuple k v))
+unionWith f m1 m2 = foldl go m2 (toUnfoldable m1 :: List (Tuple k v))
   where
   go m (Tuple k v) = alter (Just <<< maybe v (f v)) k m
 
