@@ -1,17 +1,21 @@
 -module(erl_data_map@foreign).
--export([empty/0,
-         isEmpty/1,
-         size/1,
-         insert/3,
-         lookupImpl/4,
-         values/1,
-         keys/1,
-         member/2,
-         mapImpl/2,
-         mapWithKeyImpl/2,
-         delete/2,
-         difference/2,
-         foldMImpl/4]).
+-export([ delete/2
+        , difference/2
+        , empty/0
+        , filterWithKeyImpl/2
+        , foldMImpl/4
+        , insert/3
+        , isEmpty/1
+        , keys/1
+        , lookupImpl/4
+        , mapImpl/2
+        , mapWithKeyImpl/2
+        , member/2
+        , size/1
+        , toUnfoldableImpl/2
+        , toUnfoldableUnorderedImpl/2
+        , values/1
+]).
 
 empty() -> #{}.
 isEmpty(M) -> M =:= #{}.
@@ -20,10 +24,12 @@ size(M) -> maps:size(M).
 
 insert(K, V, M) -> M#{ K => V}.
 
+filterWithKeyImpl(F, M) -> maps:filter(F, M)
+
 lookupImpl(Nothing, Just, K, M) ->
-    case maps:is_key(K, M) of
-        true -> Just(maps:get(K, M));
-        false -> Nothing
+    case maps:find(K, M) of
+      {ok, Value} -> Just(Value);
+      error -> Nothing
     end.
 
 values(M) -> maps:values(M).
@@ -49,3 +55,9 @@ difference(M1, M2) ->
             end,
             M1,
             M2).
+
+toUnfoldImpl(Tuple, M) ->
+  [Tuple(K, V) || {K, V} <- lists:sort(maps:to_list(M))].
+
+toUnfoldableUnorderedImpl(Tuple, M) ->
+  [Tuple(K, V) || {K, V} <- maps:to_list(M)].

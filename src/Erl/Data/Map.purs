@@ -1,25 +1,35 @@
 module Erl.Data.Map
   ( Map
-  , empty
-  , isEmpty
-  , size
-  , insert
-  , singleton
-  , lookup
-  , values
-  , keys
-  , mapWithKey
-  , member
+  , alter
   , delete
   , difference
+  , empty
+  , filter
+  , filterKeys
+  , filterWithKey
   , fromFoldable
-  , alter
+  , fromFoldableWith
+  , fromFoldableWithIndex
+  , insert
+  , isEmpty
+  , keys
+  , lookup
+  , mapWithKey
+  , mapMaybe
+  , mapMaybeWithKey
+  , member
+  , singleton
+  , size
+  , toUnfoldable
+  , toUnfoldableUnordered
+  , values
+  , update
   ) where
 
 import Prelude
 
 import Data.Foldable (class Foldable, foldl, foldr)
-import Data.FoldableWithIndex (class FoldableWithIndex)
+import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex)
 import Data.Function.Uncurried (Fn2, mkFn2)
 import Data.Maybe (Maybe(..), maybe')
 import Data.Traversable (class Traversable, sequenceDefault)
@@ -35,6 +45,9 @@ foreign import isEmpty :: forall a b. Map a b -> Boolean
 foreign import size :: forall a b. Map a b -> Int
 
 foreign import insert :: forall a b. a -> b -> Map a b -> Map a b
+
+foreign import filterWithKeyImpl :: forall k v. (Fn2 k v Boolean) -> Map k v -> Map k v
+filterWithKey pred = filterWithKeyImpl (mkFn2 pred)
 
 singleton :: forall a b. a -> b -> Map a b
 singleton a b = insert a b empty
@@ -52,7 +65,17 @@ instance functorMap :: Functor (Map a) where
 foreign import mapWithKeyImpl :: forall k a b. (Fn2 k a b) -> Map k a -> Map k b
 
 mapWithKey :: forall k a b. (k -> a -> b) -> Map k a -> Map k b
-mapWithKey f m = mapWithKeyImpl (mkFn2 f) m
+mapWithKey f = mapWithKeyImpl (mkFn2 f)
+
+-- | Applies a function to each value in a map, discarding entries where the
+-- | function returns `Nothing`.
+mapMaybe :: forall k a b. Ord k => (a -> Maybe b) -> Map k a -> Map k b
+mapMaybe = mapMaybeWithKey <<< const
+
+-- | Applies a function to each key/value pair in a map, discarding entries
+-- | where the function returns Nothing.
+mapMaybeWithKey :: forall k a b. (k -> a -> Maybe b) -> Map k a -> Map k b
+mapMaybeWithKey f = fold (\k a acc -> maybe acc (\b -> insert k b acc) (f k a)) empty
 
 foreign import member :: forall k a. k -> Map k a -> Boolean
 
@@ -69,7 +92,15 @@ foreign import keys :: forall a b. Map a b -> List a
 foreign import foldMImpl :: forall a b m z. (m -> (z -> m) -> m) -> (z -> a -> b -> m) -> m -> Map a b -> m
 
 alter :: forall k v. (Maybe v -> Maybe v) -> k -> Map k v -> Map k v
-alter f k m = lookup k m # f # maybe' (\_ -> delete k m) (\v -> insert k v m)
+alter f k m = case lookup k m of
+  Nothing -> case f Nothing of
+    Nothing -> m
+    Just v -> insert k v m
+  org -> maybe' (\_ -> delete k m) (\v -> insert k v m) $ f org
+
+-- | Update or delete the value for a key in a map
+update :: forall k v. Ord k => (v -> Maybe v) -> k -> Map k v -> Map k v
+update f k m = alter (maybe Nothing f) k m
 
 -- | Fold the keys and values of a map
 fold :: forall a b z. (z -> a -> b -> z) -> z -> Map a b -> z
@@ -90,6 +121,27 @@ foldM f z = foldMImpl bind f (pure z)
 fromFoldable :: forall f k v. Ord k => Foldable f => f (Tuple k v) -> Map k v
 fromFoldable = foldl (\m (Tuple k v) -> insert k v m) empty
 
+-- | Convert any foldable collection of key/value pairs to a map.
+-- | On key collision, the values are configurably combined.
+fromFoldableWith :: forall f k v. Ord k => Foldable f => (v -> v -> v) -> f (Tuple k v) -> Map k v
+fromFoldableWith f = foldl (\m (Tuple k v) -> alter (combine v) k m) empty where
+  combine v (Just v') = Just $ f v v'
+  combine v Nothing = Just v
+
+-- | Convert any indexed foldable collection into a map.
+fromFoldableWithIndex :: forall f k v. Ord k => FoldableWithIndex k f => f v -> Map k v
+fromFoldableWithIndex = foldlWithIndex (\k m v -> insert k v m) empty
+
+foreign import toUnfoldImpl :: forall k v. (Fn2 k v (Tuple k v)) -> Map k v -> List (Tuple k v)
+foreign import toUnfoldableUnorderedImpl :: forall k v. (Fn2 k v (Tuple k v)) -> Map k v -> List (Tuple k v)
+-- | Convert a map to an unfoldable structure of key/value pairs where the keys are in ascending order
+toUnfoldable :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
+toUnfoldable = L.toUnfoldable <$> toUnfoldImpl (mkFn2 Tuple)
+
+-- | Convert a map to an unfoldable structure of key/value pairs
+toUnfoldableUnordered :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
+toUnfoldableUnordered = L.toUnfoldable <$> toUnfoldableUnorderedImpl (mkFn2 Tuple)
+
 instance foldableMap :: Foldable (Map a) where
   foldr f z m = foldr f z (values m)
   foldl f = fold (\z _ -> f z)
@@ -103,3 +155,13 @@ instance foldableWithIndexMap :: FoldableWithIndex a (Map a) where
 instance traversableMap :: Traversable (Map a) where
   traverse f ms = fold (\acc k v -> flip (insert k) <$> acc <*> f v) (pure empty) ms
   sequence = sequenceDefault
+
+-- | Filter out those key/value pairs of a map for which a predicate
+-- | on the key fails to hold.
+filterKeys :: forall k. Ord k => (k -> Boolean) -> Map k ~> Map k
+filterKeys predicate = filterWithKey $ const <<< predicate
+
+-- | Filter out those key/value pairs of a map for which a predicate
+-- | on the value fails to hold.
+filter :: forall k v. Ord k => (v -> Boolean) -> Map k v -> Map k v
+filter predicate = filterWithKey $ const predicate
