@@ -164,7 +164,7 @@ instance traversableMap :: Traversable (Map a) where
 instance showMap :: (Show k, Show v) => Show (Map k v) where
   show m = "(fromFoldable " <> show (toList m) <> ")"
     where
-      toList :: forall k v. Map k v -> List (Tuple k v)
+      toList :: forall k' v'. Map k' v' -> List (Tuple k' v')
       toList = toUnfoldable
 
 -- | Filter out those key/value pairs of a map for which a predicate
