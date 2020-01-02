@@ -8,13 +8,10 @@ import Data.Foldable (and)
 import Data.Function (on)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..), fst, uncurry)
-import Debug.Trace (trace, traceM)
 import Effect (Effect)
-import Effect.Console (log)
-import Erl.Data.List (List(..), length, nil, nubBy, singleton, sort, sortBy, (:))
+import Erl.Data.List (List, length, nil, nubBy, singleton, sort, sortBy, (:))
 import Erl.Data.Map as M
 import Erl.Test.EUnit (runTests, suite, test)
-import Partial.Unsafe (unsafePartial)
 import Test.Assert (assert, assertEqual)
 
 main :: Effect Unit

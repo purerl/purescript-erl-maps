@@ -56,7 +56,7 @@ foreign import insert :: forall a b. a -> b -> Map a b -> Map a b
 -- |
 -- | The combining function is called with the existing value as the first
 -- | argument and the new value as the second argument.
-insertWith :: forall k v. Ord k => (v -> v -> v) -> k -> v -> Map k v -> Map k v
+insertWith :: forall k v. (v -> v -> v) -> k -> v -> Map k v -> Map k v
 insertWith f k v = alter (Just <<< maybe v (flip f v)) k
 
 foreign import filterWithKeyImpl :: forall k v. (Fn2 k v Boolean) -> Map k v -> Map k v
@@ -83,7 +83,7 @@ mapWithKey f = mapWithKeyImpl (mkFn2 f)
 
 -- | Applies a function to each value in a map, discarding entries where the
 -- | function returns `Nothing`.
-mapMaybe :: forall k a b. Ord k => (a -> Maybe b) -> Map k a -> Map k b
+mapMaybe :: forall k a b. (a -> Maybe b) -> Map k a -> Map k b
 mapMaybe = mapMaybeWithKey <<< const
 
 -- | Applies a function to each key/value pair in a map, discarding entries
@@ -112,7 +112,7 @@ alter f k m = case lookup k m of
   org -> maybe' (\_ -> delete k m) (\v -> insert k v m) $ f org
 
 -- | Update or delete the value for a key in a map
-update :: forall k v. Ord k => (v -> Maybe v) -> k -> Map k v -> Map k v
+update :: forall k v. (v -> Maybe v) -> k -> Map k v -> Map k v
 update f k m = alter (maybe Nothing f) k m
 
 -- | Fold the keys and values of a map
@@ -133,18 +133,18 @@ foldM f z = foldMImpl bind f (pure z)
 
 -- | Convert any foldable collection of key/value pairs to a map.
 -- | On key collision, later values take precedence over earlier ones.
-fromFoldable :: forall f k v. Ord k => Foldable f => f (Tuple k v) -> Map k v
+fromFoldable :: forall f k v. Foldable f => f (Tuple k v) -> Map k v
 fromFoldable = foldl (\m (Tuple k v) -> insert k v m) empty
 
 -- | Convert any foldable collection of key/value pairs to a map.
 -- | On key collision, the values are configurably combined.
-fromFoldableWith :: forall f k v. Ord k => Foldable f => (v -> v -> v) -> f (Tuple k v) -> Map k v
+fromFoldableWith :: forall f k v. Foldable f => (v -> v -> v) -> f (Tuple k v) -> Map k v
 fromFoldableWith f = foldl (\m (Tuple k v) -> alter (combine v) k m) empty where
   combine v (Just v') = Just $ f v v'
   combine v Nothing = Just v
 
 -- | Convert any indexed foldable collection into a map.
-fromFoldableWithIndex :: forall f k v. Ord k => FoldableWithIndex k f => f v -> Map k v
+fromFoldableWithIndex :: forall f k v. FoldableWithIndex k f => f v -> Map k v
 fromFoldableWithIndex = foldlWithIndex (\k m v -> insert k v m) empty
 
 foreign import toUnfoldableImpl :: forall k v. (Fn2 k v (Tuple k v)) -> Map k v -> List (Tuple k v)
@@ -172,7 +172,7 @@ instance ord1Map :: Ord k => Ord1 (Map k) where
 instance ordMap :: (Ord k, Ord v) => Ord (Map k v) where
   compare m1 m2 = compare (toAscArray m1) (toAscArray m2)
 
-instance semigroupMap :: Ord k => Semigroup (Map k v) where
+instance semigroupMap :: Semigroup (Map k v) where
   append = union
 
 instance foldableMap :: Foldable (Map a) where
@@ -197,10 +197,10 @@ instance showMap :: (Show k, Show v) => Show (Map k v) where
 
 -- | Filter out those key/value pairs of a map for which a predicate
 -- | on the key fails to hold.
-filterKeys :: forall k. Ord k => (k -> Boolean) -> Map k ~> Map k
+filterKeys :: forall k. (k -> Boolean) -> Map k ~> Map k
 filterKeys predicate = filterWithKey $ const <<< predicate
 
 -- | Filter out those key/value pairs of a map for which a predicate
 -- | on the value fails to hold.
-filter :: forall k v. Ord k => (v -> Boolean) -> Map k v -> Map k v
+filter :: forall k v. (v -> Boolean) -> Map k v -> Map k v
 filter predicate = filterWithKey $ const predicate
