@@ -3,7 +3,7 @@
 , backend =
     "purerl"
 , dependencies =
-    [ "console", "erl-lists", "functions", "prelude", "tuples", "unfoldable" ]
+    [ "erl-lists", "functions", "prelude", "tuples", "unfoldable" ]
 , packages =
     ./packages.dhall
 , sources =
