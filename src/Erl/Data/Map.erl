@@ -16,6 +16,7 @@
         , toUnfoldableImpl/2
         , toUnfoldableUnorderedImpl/2
         , values/1
+        , union/2
 ]).
 
 empty() -> #{}.
@@ -36,6 +37,8 @@ lookupImpl(Nothing, Just, K, M) ->
 values(M) -> maps:values(M).
 
 keys(M) -> maps:keys(M).
+
+union(M1, M2) -> maps:merge(M1,M2).
 
 mapImpl(F, M) -> maps:map(fun (_K, V) -> F(V) end, M).
 

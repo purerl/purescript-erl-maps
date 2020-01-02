@@ -11,6 +11,7 @@ module Erl.Data.Map
   , fromFoldableWith
   , fromFoldableWithIndex
   , insert
+  , insertWith
   , isEmpty
   , keys
   , lookup
@@ -24,14 +25,17 @@ module Erl.Data.Map
   , toUnfoldableUnordered
   , values
   , update
+  , union
   ) where
 
 import Prelude
 
+import Data.Eq (class Eq1)
 import Data.Foldable (class Foldable, foldl, foldr)
 import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex)
 import Data.Function.Uncurried (Fn2, Fn3, mkFn2, mkFn3)
 import Data.Maybe (Maybe(..), maybe, maybe')
+import Data.Ord (class Ord1)
 import Data.Traversable (class Traversable, sequenceDefault)
 import Data.Tuple (Tuple(..))
 import Data.Unfoldable (class Unfoldable)
@@ -47,6 +51,13 @@ foreign import isEmpty :: forall a b. Map a b -> Boolean
 foreign import size :: forall a b. Map a b -> Int
 
 foreign import insert :: forall a b. a -> b -> Map a b -> Map a b
+
+-- | Inserts or updates a value with the given function.
+-- |
+-- | The combining function is called with the existing value as the first
+-- | argument and the new value as the second argument.
+insertWith :: forall k v. Ord k => (v -> v -> v) -> k -> v -> Map k v -> Map k v
+insertWith f k v = alter (Just <<< maybe v (flip f v)) k
 
 foreign import filterWithKeyImpl :: forall k v. (Fn2 k v Boolean) -> Map k v -> Map k v
 filterWithKey :: forall k v. (k -> v -> Boolean) -> Map k v -> Map k v
@@ -90,10 +101,9 @@ foreign import values :: forall a b. Map a b -> List b
 
 foreign import keys :: forall a b. Map a b -> List a
 
--- Folds taken from purescript-foreign-object
+foreign import union :: forall k v. Map k v -> Map k v -> Map k v
 
-
-
+-- | Insert the value, delete a value, or update a value for a key in a map
 alter :: forall k v. (Maybe v -> Maybe v) -> k -> Map k v -> Map k v
 alter f k m = case lookup k m of
   Nothing -> case f Nothing of
@@ -146,6 +156,24 @@ toUnfoldable = List.toUnfoldable <$> toUnfoldableImpl (mkFn2 Tuple)
 -- | Convert a map to an unfoldable structure of key/value pairs
 toUnfoldableUnordered :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
 toUnfoldableUnordered = List.toUnfoldable <$> toUnfoldableUnorderedImpl (mkFn2 Tuple)
+
+toAscArray :: forall k v. Map k v -> Array (Tuple k v)
+toAscArray = toUnfoldable
+
+instance eq1Map :: Eq k => Eq1 (Map k) where
+  eq1 = eq
+
+instance eqMap :: (Eq k, Eq v) => Eq (Map k v) where
+  eq m1 m2 = toAscArray m1 == toAscArray m2
+
+instance ord1Map :: Ord k => Ord1 (Map k) where
+  compare1 = compare
+
+instance ordMap :: (Ord k, Ord v) => Ord (Map k v) where
+  compare m1 m2 = compare (toAscArray m1) (toAscArray m2)
+
+instance semigroupMap :: Ord k => Semigroup (Map k v) where
+  append = union
 
 instance foldableMap :: Foldable (Map a) where
   foldr f z m = foldr f z (values m)
