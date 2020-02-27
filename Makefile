@@ -3,8 +3,7 @@
 all: ps erl
 
 ps:
-	psc-package sources | xargs purs compile 'test/**/*.purs' 'src/**/*.purs'
-
+	spago build
 test: ps erl
 	erl -pa ebin -noshell -eval '(test_main@ps:main())()' -eval 'init:stop()'
 
