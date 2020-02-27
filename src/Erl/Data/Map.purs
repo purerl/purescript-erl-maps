@@ -34,9 +34,11 @@ import Data.Eq (class Eq1)
 import Data.Foldable (class Foldable, foldl, foldr)
 import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex)
 import Data.Function.Uncurried (Fn2, Fn3, mkFn2, mkFn3)
+import Data.FunctorWithIndex (class FunctorWithIndex)
 import Data.Maybe (Maybe(..), maybe, maybe')
 import Data.Ord (class Ord1)
 import Data.Traversable (class Traversable, sequenceDefault)
+import Data.TraversableWithIndex (class TraversableWithIndex, traverseWithIndexDefault)
 import Data.Tuple (Tuple(..))
 import Data.Unfoldable (class Unfoldable)
 import Erl.Data.List (List)
@@ -188,6 +190,12 @@ instance foldableWithIndexMap :: FoldableWithIndex a (Map a) where
 instance traversableMap :: Traversable (Map a) where
   traverse f ms = fold (\acc k v -> flip (insert k) <$> acc <*> f v) (pure empty) ms
   sequence = sequenceDefault
+
+instance functorWithIndexMap :: FunctorWithIndex a (Map a) where
+  mapWithIndex = mapWithKey
+
+instance traversableWithIndex :: TraversableWithIndex a (Map a) where
+  traverseWithIndex = traverseWithIndexDefault
 
 instance showMap :: (Show k, Show v) => Show (Map k v) where
   show m = "(fromFoldable " <> show (toList m) <> ")"
