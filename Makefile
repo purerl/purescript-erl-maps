@@ -3,7 +3,7 @@
 all: ps erl
 
 ps:
-	spago build -x test.dhall
+	spago -x test.dhall build
 test: ps erl
 	erl -pa ebin -noshell -eval '(test_main@ps:main())()' -eval 'init:stop()'
 
