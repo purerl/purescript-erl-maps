@@ -1,12 +1,14 @@
 module Erl.Data.Map
   ( Map
   , alter
+  , alterM
   , delete
   , difference
   , empty
   , filter
   , filterKeys
   , filterWithKey
+  , foldM
   , fromFoldable
   , fromFoldableWith
   , fromFoldableWithIndex
@@ -25,6 +27,7 @@ module Erl.Data.Map
   , toUnfoldableUnordered
   , values
   , update
+  , updateM
   , union
   ) where
 
@@ -108,14 +111,20 @@ foreign import union :: forall k v. Map k v -> Map k v -> Map k v
 -- | Insert the value, delete a value, or update a value for a key in a map
 alter :: forall k v. (Maybe v -> Maybe v) -> k -> Map k v -> Map k v
 alter f k m = case lookup k m of
-  Nothing -> case f Nothing of
-    Nothing -> m
-    Just v -> insert k v m
+  Nothing -> maybe m (\v -> insert k v m) $ f Nothing
   org -> maybe' (\_ -> delete k m) (\v -> insert k v m) $ f org
+
+alterM :: forall k v m. Functor m => (Maybe v -> m (Maybe v)) -> k -> Map k v -> m (Map k v)
+alterM f k m = case lookup k m of
+  Nothing -> maybe m (\v -> insert k v m) <$> f Nothing
+  org -> maybe' (\_ -> delete k m) (\v -> insert k v m) <$> f org
 
 -- | Update or delete the value for a key in a map
 update :: forall k v. (v -> Maybe v) -> k -> Map k v -> Map k v
 update f k m = alter (maybe Nothing f) k m
+
+updateM :: forall k v m. Applicative m => (v -> m (Maybe v)) -> k -> Map k v -> m (Map k v)
+updateM f k m = alterM (maybe (pure Nothing) f) k m
 
 -- | Fold the keys and values of a map
 foreign import foldImpl :: forall a b z. (Fn3 a b z z) -> z -> Map a b -> z
