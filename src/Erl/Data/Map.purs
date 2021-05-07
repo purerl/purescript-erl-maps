@@ -8,6 +8,7 @@ module Erl.Data.Map
   , filter
   , filterKeys
   , filterWithKey
+  , foldM
   , fromFoldable
   , fromFoldableWith
   , fromFoldableWithIndex
@@ -122,7 +123,7 @@ alterM f k m = case lookup k m of
 update :: forall k v. (v -> Maybe v) -> k -> Map k v -> Map k v
 update f k m = alter (maybe Nothing f) k m
 
-updateM :: forall k v m. Applicative m => Functor m => (v -> m (Maybe v)) -> k -> Map k v -> m (Map k v)
+updateM :: forall k v m. Applicative m => (v -> m (Maybe v)) -> k -> Map k v -> m (Map k v)
 updateM f k m = alterM (maybe (pure Nothing) f) k m
 
 -- | Fold the keys and values of a map
