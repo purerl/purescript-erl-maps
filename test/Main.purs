@@ -3,6 +3,7 @@ module Test.Main where
 import Prelude
 
 import Control.Alt ((<|>))
+import Control.Plus (empty)
 import Data.Array as A
 import Data.Foldable (and)
 import Data.Function (on)
@@ -137,6 +138,49 @@ main =
             m2 = M.fromFoldable [Tuple 3 3, Tuple 1 1, Tuple 5 5]
         assertEqual { actual: M.lookup 1 (M.union m1 m2)
                     , expected: (M.lookup 1 m1 <|> M.lookup 1 m2)
+                    }
+
+      -- alt is just union
+      test "Alt is idempotent" do
+        let m1 = M.fromFoldable [Tuple 0 0, Tuple 1 1, Tuple 2 2]
+            m2 = M.fromFoldable [Tuple 3 3, Tuple 1 0, Tuple 5 5]
+        assertEqual { actual: (m1 <|> m2)
+                    , expected: m1 <|> m2 <|> m2
+                    }
+
+      test "Alt prefers left" do
+        let m1 = M.fromFoldable [Tuple 0 0, Tuple 1 1, Tuple 2 2]
+            m2 = M.fromFoldable [Tuple 3 3, Tuple 1 1, Tuple 5 5]
+        assertEqual { actual: M.lookup 1 (m1 <|> m2)
+                    , expected: (M.lookup 1 m1 <|> M.lookup 1 m2)
+                    }
+
+      test "Plus empty is the empty map" do
+        assertEqual { actual: empty :: M.Map Int String
+                    , expected: M.empty
+                    }
+
+      test "Apply" do
+        let m1 = M.fromFoldable [Tuple 0 (_ + 10), Tuple 1 (_ + 10), Tuple 2 (_ + 20), Tuple 3 (_ + 20), Tuple 4 (_ + 20)]
+            m2 = M.fromFoldable [Tuple 4 4, Tuple 1 1, Tuple 5 5, Tuple 5 5]
+            m3 = M.fromFoldable [Tuple 1 11, Tuple 4 24]
+        assertEqual { actual: m1 <*> m2
+                    , expected: m3
+                    }
+
+      test "Bind" do
+        let f a = M.fromFoldable [Tuple a (a + 1), Tuple (a + 10) (a + 10)]
+            g _ = empty
+            h _ = M.fromFoldable [Tuple 4 14, Tuple 5 15, Tuple 6 16]
+            m1 = M.fromFoldable [Tuple 1 1, Tuple 5 5]
+        assertEqual { actual: m1 >>= f
+                    , expected: M.fromFoldable [Tuple 1 2, Tuple 5 6]
+                    }
+        assertEqual { actual: m1 >>= g
+                    , expected: M.empty :: M.Map Int String
+                    }
+        assertEqual { actual: m1 >>= h
+                    , expected: M.fromFoldable [Tuple 5 15]
                     }
 
       test "difference" do

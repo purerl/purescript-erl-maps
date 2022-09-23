@@ -35,6 +35,8 @@ module Erl.Data.Map
 
 import Prelude
 
+import Control.Alt (class Alt)
+import Control.Plus (class Plus)
 import Data.Eq (class Eq1)
 import Data.Foldable (class Foldable, foldl, foldr)
 import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex)
@@ -219,6 +221,19 @@ instance showMap :: (Show k, Show v) => Show (Map k v) where
     where
       toList :: forall k' v'. Map k' v' -> List (Tuple k' v')
       toList = toUnfoldable
+
+instance altMap :: Alt (Map k) where
+  alt = union
+
+instance plusMap :: Plus (Map k) where
+  empty = empty
+
+instance applyMap :: Apply (Map k) where
+  apply = intersectionWith identity
+
+instance bindMap :: Bind (Map k) where
+  bind m f = mapMaybeWithKey (\k -> lookup k <<< f) m
+
 
 -- | Filter out those key/value pairs of a map for which a predicate
 -- | on the key fails to hold.
