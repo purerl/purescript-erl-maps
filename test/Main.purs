@@ -140,6 +140,13 @@ main =
                     , expected: (M.lookup 1 m1 <|> M.lookup 1 m2)
                     }
 
+      test "UnionWith uses merge function" do
+        let m1 = M.fromFoldable [Tuple 0 0, Tuple 1 1, Tuple 2 2]
+            m2 = M.fromFoldable [Tuple 1 11, Tuple 2 12, Tuple 4 14]
+        assertEqual { actual: M.unionWith (\a b -> a * 100 + b) m1 m2
+                    , expected: M.fromFoldable [Tuple 0 0, Tuple 1 111, Tuple 2 212, Tuple 4 14]
+                    }
+
       -- alt is just union
       test "Alt is idempotent" do
         let m1 = M.fromFoldable [Tuple 0 0, Tuple 1 1, Tuple 2 2]

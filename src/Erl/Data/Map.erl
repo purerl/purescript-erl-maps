@@ -18,6 +18,7 @@
         , toUnfoldableUnorderedImpl/2
         , values/1
         , union/2
+        , unionWithImpl/3
 ]).
 
 empty() -> #{}.
@@ -40,6 +41,8 @@ values(M) -> maps:values(M).
 keys(M) -> maps:keys(M).
 
 union(M1, M2) -> maps:merge(M1,M2).
+
+unionWithImpl(F, M1, M2) -> maps:merge_with(fun (_K,A,B) -> F(A,B) end,M1,M2).
 
 mapImpl(F, M) -> maps:map(fun (_K, V) -> F(V) end, M).
 

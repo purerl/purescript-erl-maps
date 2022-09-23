@@ -31,6 +31,7 @@ module Erl.Data.Map
   , update
   , updateM
   , union
+  , unionWith
   ) where
 
 import Prelude
@@ -117,6 +118,14 @@ foreign import values :: forall a b. Map a b -> List b
 foreign import keys :: forall a b. Map a b -> List a
 
 foreign import union :: forall k v. Map k v -> Map k v -> Map k v
+
+foreign import unionWithImpl :: forall k v. (Fn2 v v v) -> Map k v -> Map k v -> Map k v
+
+-- | Compute the union of two maps, using the specified function
+-- | to combine values for duplicate keys.
+unionWith :: forall k v. (v -> v -> v) -> Map k v -> Map k v -> Map k v
+unionWith f m1 m2 =
+  unionWithImpl (mkFn2 f) m1 m2
 
 -- | Insert the value, delete a value, or update a value for a key in a map
 alter :: forall k v. (Maybe v -> Maybe v) -> k -> Map k v -> Map k v
