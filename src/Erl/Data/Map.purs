@@ -5,8 +5,6 @@ module Erl.Data.Map
   , catMaybes
   , delete
   , difference
-  , intersection
-  , intersectionWith
   , empty
   , filter
   , filterKeys
@@ -17,23 +15,25 @@ module Erl.Data.Map
   , fromFoldableWithIndex
   , insert
   , insertWith
+  , intersection
+  , intersectionWith
   , isEmpty
   , keys
   , lookup
-  , mapWithKey
   , mapMaybe
   , mapMaybeWithKey
+  , mapWithKey
   , member
   , singleton
   , size
   , toUnfoldable
   , toUnfoldableUnordered
-  , values
+  , union
+  , unionWith
+  , unions
   , update
   , updateM
-  , union
-  , unions
-  , unionWith
+  , values
   ) where
 
 import Prelude
