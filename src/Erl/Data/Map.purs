@@ -2,6 +2,7 @@ module Erl.Data.Map
   ( Map
   , alter
   , alterM
+  , catMaybes
   , delete
   , difference
   , intersection
@@ -101,6 +102,11 @@ mapMaybe = mapMaybeWithKey <<< const
 -- | where the function returns Nothing.
 mapMaybeWithKey :: forall k a b. (k -> a -> Maybe b) -> Map k a -> Map k b
 mapMaybeWithKey f = fold (\acc k a -> maybe acc (\b -> insert k b acc) (f k a)) empty
+
+-- | Filter a map of optional values, keeping only the key/value pairs which
+-- | contain a value, creating a new map.
+catMaybes :: forall k v. Map k (Maybe v) -> Map k v
+catMaybes = mapMaybe identity
 
 foreign import member :: forall k a. k -> Map k a -> Boolean
 
