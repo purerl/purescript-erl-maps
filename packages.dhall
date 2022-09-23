@@ -1,5 +1,5 @@
 let upstream =
-      https://raw.githubusercontent.com/purerl/package-sets/erl-0.13.6-20200715/src/packages.dhall sha256:98227ee8945a3c7ca4a105c1001dd067128e504bdd45cb6bd9c4509563d83fb9
+      https://raw.githubusercontent.com/purerl/package-sets/erl-0.14.5-20220204-2/src/packages.dhall sha256:bf284d597ad053b43591b964a52aa0f41ed12a576c3efde85ba999ad65072fc9
 
 let overrides = {=}
 

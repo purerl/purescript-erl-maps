@@ -143,8 +143,8 @@ main =
         let m1 = M.fromFoldable [Tuple 0 0, Tuple 1 1, Tuple 2 2]
             m2 = M.fromFoldable [Tuple 3 3, Tuple 1 1, Tuple 5 5]
             d  = M.difference m1 m2
-        assert (and (map (\k -> M.member 1 m1) (A.fromFoldable $ M.keys d)) &&
-                and (map (\k -> not $ M.member 1 d) (A.fromFoldable $ M.keys m2)))
+        assert (and (map (\_ -> M.member 1 m1) (A.fromFoldable $ M.keys d)) &&
+                and (map (\_ -> not $ M.member 1 d) (A.fromFoldable $ M.keys m2)))
 
       test "size" do
         let xs = nubBy ((==) `on` fst) ((Tuple 1 41) : (Tuple 2 42) : nil)
@@ -161,7 +161,7 @@ main =
       test "filterKeys keeps those keys for which predicate is true" do
         let m1 = M.fromFoldable [Tuple 0 0, Tuple 1 1, Tuple 2 2]
         assert (A.all
-                 ((>) 2) (M.keys (M.filterKeys ((>) 2) m1))
+                 ((>) 2) (A.fromFoldable (M.keys (M.filterKeys ((>) 2) m1)))
                )
 
       test "Member" do
