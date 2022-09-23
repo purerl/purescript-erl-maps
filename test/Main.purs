@@ -147,6 +147,23 @@ main =
                     , expected: M.fromFoldable [Tuple 0 0, Tuple 1 111, Tuple 2 212, Tuple 4 14]
                     }
 
+      test "Unions prefers first" do
+        let m1 = M.fromFoldable [Tuple 1 1, Tuple 5 1]
+            m2 = M.fromFoldable [Tuple 2 2, Tuple 5 2]
+            m3 = M.fromFoldable [Tuple 3 3, Tuple 5 3]
+        assertEqual { actual: M.unions [m1, m2, m3]
+                    , expected: M.fromFoldable [Tuple 1 1, Tuple 2 2, Tuple 3 3, Tuple 5 3]
+                    }
+        assertEqual { actual: M.unions [m3, m2, m1]
+                    , expected: M.fromFoldable [Tuple 1 1, Tuple 2 2, Tuple 3 3, Tuple 5 1]
+                    }
+        assertEqual { actual: M.unions [m3, m1, m2]
+                    , expected: M.fromFoldable [Tuple 1 1, Tuple 2 2, Tuple 3 3, Tuple 5 2]
+                    }
+        assertEqual { actual: M.unions [m1, m2]
+                    , expected: M.fromFoldable [Tuple 1 1, Tuple 2 2, Tuple 5 2]
+                    }
+
       -- alt is just union
       test "Alt is idempotent" do
         let m1 = M.fromFoldable [Tuple 0 0, Tuple 1 1, Tuple 2 2]

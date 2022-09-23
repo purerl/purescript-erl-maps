@@ -31,6 +31,7 @@ module Erl.Data.Map
   , update
   , updateM
   , union
+  , unions
   , unionWith
   ) where
 
@@ -126,6 +127,10 @@ foreign import unionWithImpl :: forall k v. (Fn2 v v v) -> Map k v -> Map k v ->
 unionWith :: forall k v. (v -> v -> v) -> Map k v -> Map k v -> Map k v
 unionWith f m1 m2 =
   unionWithImpl (mkFn2 f) m1 m2
+
+-- | Compute the union of a collection of maps. Keeps the last value for conflicting keys.
+unions :: forall k v f. Foldable f => f (Map k v) -> Map k v
+unions = foldl union empty
 
 -- | Insert the value, delete a value, or update a value for a key in a map
 alter :: forall k v. (Maybe v -> Maybe v) -> k -> Map k v -> Map k v
