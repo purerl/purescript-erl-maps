@@ -143,8 +143,23 @@ main =
         let m1 = M.fromFoldable [Tuple 0 0, Tuple 1 1, Tuple 2 2]
             m2 = M.fromFoldable [Tuple 3 3, Tuple 1 1, Tuple 5 5]
             d  = M.difference m1 m2
+
         assert (and (map (\_ -> M.member 1 m1) (A.fromFoldable $ M.keys d)) &&
                 and (map (\_ -> not $ M.member 1 d) (A.fromFoldable $ M.keys m2)))
+
+      test "intersection" do
+        let m1 = M.fromFoldable [Tuple 0 0, Tuple 1 1, Tuple 2 2]
+            m2 = M.fromFoldable [Tuple 3 "c", Tuple 1 "a", Tuple 5 "e"]
+        assertEqual { actual: M.intersection m1 m2
+                    , expected: M.fromFoldable [Tuple 1 1]
+                    }
+
+      test "intersectionWith" do
+        let m1 = M.fromFoldable [Tuple 0 0, Tuple 1 1, Tuple 2 2]
+            m2 = M.fromFoldable [Tuple 3 30, Tuple 1 10, Tuple 5 50]
+        assertEqual { actual: M.intersectionWith (+) m1 m2
+                    , expected: M.fromFoldable [Tuple 1 11]
+                    }
 
       test "size" do
         let xs = nubBy ((==) `on` fst) ((Tuple 1 41) : (Tuple 2 42) : nil)

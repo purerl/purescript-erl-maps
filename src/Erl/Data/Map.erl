@@ -1,6 +1,7 @@
 -module(erl_data_map@foreign).
 -export([ delete/2
         , difference/2
+        , intersectionWithImpl/3
         , empty/0
         , filterWithKeyImpl/2
         , foldImpl/3
@@ -62,6 +63,9 @@ difference(M1, M2) ->
             end,
             M1,
             M2).
+
+intersectionWithImpl(F, M1, M2) ->
+  maps:intersect_with(fun(_K,A,B) -> F(A,B) end, M1, M2).
 
 toUnfoldableImpl(Tuple, M) ->
   [Tuple(K, V) || {K, V} <- lists:sort(maps:to_list(M))].

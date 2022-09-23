@@ -4,6 +4,8 @@ module Erl.Data.Map
   , alterM
   , delete
   , difference
+  , intersection
+  , intersectionWith
   , empty
   , filter
   , filterKeys
@@ -99,6 +101,12 @@ mapMaybeWithKey f = fold (\acc k a -> maybe acc (\b -> insert k b acc) (f k a)) 
 foreign import member :: forall k a. k -> Map k a -> Boolean
 
 foreign import difference :: forall k a b. Map k a -> Map k b -> Map k a
+
+foreign import intersectionWithImpl :: forall k a b c. (Fn2 a b c) -> Map k a -> Map k b -> Map k c
+
+intersectionWith :: forall k a b c. (a -> b -> c) -> Map k a -> Map k b -> Map k c
+intersectionWith f m1 m2 =
+  intersectionWithImpl (mkFn2 f) m1 m2
 
 foreign import delete :: forall k a. k -> Map k a -> Map k a
 
@@ -221,3 +229,8 @@ filterKeys predicate = filterWithKey $ const <<< predicate
 -- | on the value fails to hold.
 filter :: forall k v. (v -> Boolean) -> Map k v -> Map k v
 filter predicate = filterWithKey $ const predicate
+
+-- | Compute the intersection of two maps, preferring values from the first map in the case
+-- | of duplicate keys.
+intersection :: forall k a b. Map k a -> Map k b -> Map k a
+intersection = intersectionWith const
