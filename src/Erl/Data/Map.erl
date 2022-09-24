@@ -40,7 +40,8 @@ values(M) -> maps:values(M).
 
 keys(M) -> maps:keys(M).
 
-union(M1, M2) -> maps:merge(M1,M2).
+% [drathier]: intentional argument order swap; erl merge is right-biased, but we want it to be left-biased.
+union(M1, M2) -> maps:merge(M2,M1).
 
 unionWithImpl(F, M1, M2) -> maps:merge_with(fun (_K,A,B) -> F(A,B) end,M1,M2).
 

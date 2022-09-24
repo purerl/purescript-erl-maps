@@ -124,6 +124,8 @@ foreign import values :: forall a b. Map a b -> List b
 
 foreign import keys :: forall a b. Map a b -> List a
 
+-- | Compute the union of two maps.
+-- | Note: Previously this function was right-biased. Now it's left-biased, to match Data.Map.
 foreign import union :: forall k v. Map k v -> Map k v -> Map k v
 
 foreign import unionWithImpl :: forall k v. (Fn2 v v v) -> Map k v -> Map k v -> Map k v
@@ -134,7 +136,8 @@ unionWith :: forall k v. (v -> v -> v) -> Map k v -> Map k v -> Map k v
 unionWith f m1 m2 =
   unionWithImpl (mkFn2 f) m1 m2
 
--- | Compute the union of a collection of maps. Keeps the last value for conflicting keys.
+-- | Compute the union of a collection of maps. Keeps the first value for conflicting keys.
+-- | Note: Previously this function kept the last value. Now it keeps the first.
 unions :: forall k v f. Foldable f => f (Map k v) -> Map k v
 unions = foldl union empty
 
