@@ -207,6 +207,13 @@ main =
                     , expected: M.fromFoldable [Tuple 5 15]
                     }
 
+      test "Semigroup" do
+        let m1 = M.fromFoldable [Tuple 0 "a0", Tuple 1 "a1", Tuple 2 "a2"]
+            m2 = M.fromFoldable [Tuple 3 "b3", Tuple 1 "b1", Tuple 5 "b5"]
+        assertEqual { actual: m1 <> m2
+                    , expected: M.fromFoldable [Tuple 0 "a0", Tuple 1 "a1b1", Tuple 2 "a2", Tuple 3 "b3", Tuple 5 "b5"]
+                    }
+
       test "difference" do
         let m1 = M.fromFoldable [Tuple 0 0, Tuple 1 1, Tuple 2 2]
             m2 = M.fromFoldable [Tuple 3 3, Tuple 1 1, Tuple 5 5]

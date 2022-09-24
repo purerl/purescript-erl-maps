@@ -213,8 +213,8 @@ instance ord1Map :: Ord k => Ord1 (Map k) where
 instance ordMap :: (Ord k, Ord v) => Ord (Map k v) where
   compare m1 m2 = compare (toAscArray m1) (toAscArray m2)
 
-instance semigroupMap :: Semigroup (Map k v) where
-  append = union
+instance semigroupMap :: Semigroup v => Semigroup (Map k v) where
+  append m1 m2 = unionWith append m1 m2
 
 instance foldableMap :: Foldable (Map a) where
   foldr f z m = foldr f z (values m)
