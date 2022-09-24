@@ -184,6 +184,11 @@ main =
                     , expected: M.empty
                     }
 
+      test "Monoid mempty is the empty map" do
+        assertEqual { actual: mempty :: M.Map Int String
+                    , expected: M.empty
+                    }
+
       test "Apply" do
         let m1 = M.fromFoldable [Tuple 0 (_ + 10), Tuple 1 (_ + 10), Tuple 2 (_ + 20), Tuple 3 (_ + 20), Tuple 4 (_ + 20)]
             m2 = M.fromFoldable [Tuple 4 4, Tuple 1 1, Tuple 5 5, Tuple 5 5]
