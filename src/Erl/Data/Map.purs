@@ -75,6 +75,7 @@ insertWith :: forall k v. (v -> v -> v) -> k -> v -> Map k v -> Map k v
 insertWith f k v = alter (Just <<< maybe v (flip f v)) k
 
 foreign import filterWithKeyImpl :: forall k v. (Fn2 k v Boolean) -> Map k v -> Map k v
+
 filterWithKey :: forall k v. (k -> v -> Boolean) -> Map k v -> Map k v
 filterWithKey pred = filterWithKeyImpl (mkFn2 pred)
 
@@ -83,6 +84,7 @@ singleton a b = insert a b empty
 
 foreign import lookupImpl :: forall a b z. z -> (b -> z) -> a -> Map a b -> z
 
+-- Get the value that corresponds to the key, if it exists.
 lookup :: forall a b. a -> Map a b -> Maybe b
 lookup = lookupImpl Nothing Just
 
@@ -128,19 +130,20 @@ foreign import values :: forall a b. Map a b -> List b
 foreign import keys :: forall a b. Map a b -> List a
 
 -- | Compute the union of two maps.
--- | Note: Previously this function was right-biased. Now it's left-biased, to match Data.Map.
+-- | Note: Now this function keeps the values from the first argument, to match Data.Map. Previously this function kept the values from the second argument.
 foreign import union :: forall k v. Map k v -> Map k v -> Map k v
 
 foreign import unionWithImpl :: forall k v. (Fn2 v v v) -> Map k v -> Map k v -> Map k v
 
 -- | Compute the union of two maps, using the specified function
 -- | to combine values for duplicate keys.
+-- | Note: Now this function keeps the values from the first argument, to match Data.Map. Previously this function kept the values from the second argument.
 unionWith :: forall k v. (v -> v -> v) -> Map k v -> Map k v -> Map k v
 unionWith f m1 m2 =
   unionWithImpl (mkFn2 f) m1 m2
 
 -- | Compute the union of a collection of maps. Keeps the first value for conflicting keys.
--- | Note: Previously this function kept the last value. Now it keeps the first.
+-- | Note: Now this function keeps the values from the first argument, to match Data.Map. Previously this function kept the values from the second argument.
 unions :: forall k v f. Foldable f => f (Map k v) -> Map k v
 unions = foldl union empty
 
@@ -162,8 +165,8 @@ update f k m = alter (maybe Nothing f) k m
 updateM :: forall k v m. Applicative m => (v -> m (Maybe v)) -> k -> Map k v -> m (Map k v)
 updateM f k m = alterM (maybe (pure Nothing) f) k m
 
--- | Fold the keys and values of a map
 foreign import foldImpl :: forall a b z. (Fn3 a b z z) -> z -> Map a b -> z
+-- | Fold the keys and values of a map
 fold :: forall a b z. (z -> a -> b -> z) -> z -> Map a b -> z
 fold f = foldImpl (mkFn3 \a b z -> f z a b)
 
@@ -190,17 +193,18 @@ fromFoldableWith f = foldl (\m (Tuple k v) -> alter (combine v) k m) empty where
   combine v (Just v') = Just $ f v v'
   combine v Nothing = Just v
 
--- | Convert any indexed foldable collection into a map.
+-- | Convert any indexed foldable collection into a map. E.g. `Array` or `List`.
 fromFoldableWithIndex :: forall f k v. FoldableWithIndex k f => f v -> Map k v
 fromFoldableWithIndex = foldlWithIndex (\k m v -> insert k v m) empty
 
 foreign import toUnfoldableImpl :: forall k v. (Fn2 k v (Tuple k v)) -> Map k v -> List (Tuple k v)
 foreign import toUnfoldableUnorderedImpl :: forall k v. (Fn2 k v (Tuple k v)) -> Map k v -> List (Tuple k v)
--- | Convert a map to an unfoldable structure of key/value pairs where the keys are in ascending order
+
+-- | Convert a map to an unfoldable structure of key/value pairs where the keys are in ascending order. E.g. `Array` or `List`.
 toUnfoldable :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
 toUnfoldable = List.toUnfoldable <$> toUnfoldableImpl (mkFn2 Tuple)
 
--- | Convert a map to an unfoldable structure of key/value pairs
+-- | Convert a map to an unfoldable structure of key/value pairs. E.g. `Array` or `List`.
 toUnfoldableUnordered :: forall f k v. Unfoldable f => Map k v -> f (Tuple k v)
 toUnfoldableUnordered = List.toUnfoldable <$> toUnfoldableUnorderedImpl (mkFn2 Tuple)
 
@@ -263,22 +267,23 @@ instance applyMap :: Apply (Map k) where
 instance bindMap :: Bind (Map k) where
   bind m f = mapMaybeWithKey (\k -> lookup k <<< f) m
 
+-- | Partitions the map into two parts, depending on the containing `Either` constructor.
 separate :: forall k a b. Map k (Either a b) -> { left :: Map k a, right :: Map k b }
 separate m = { left:  m <#> either (Just) (const Nothing) # catMaybes
-                 , right: m <#> either (const Nothing) (Just) # catMaybes
-                 }
+             , right: m <#> either (const Nothing) (Just) # catMaybes
+             }
 
 instance compactMap :: Compactable (Map k) where
   compact = catMaybes 
   separate = separate 
 
 -- | Filter out those key/value pairs of a map for which a predicate
--- | on the key fails to hold.
+-- | on the key fails to hold. `true -> keep`.
 filterKeys :: forall k. (k -> Boolean) -> Map k ~> Map k
 filterKeys predicate = filterWithKey $ const <<< predicate
 
 -- | Filter out those key/value pairs of a map for which a predicate
--- | on the value fails to hold.
+-- | on the value fails to hold. `true -> keep`.
 filter :: forall k v. (v -> Boolean) -> Map k v -> Map k v
 filter predicate = filterWithKey $ const predicate
 
