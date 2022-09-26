@@ -264,3 +264,8 @@ main =
             in1 = M.member 1 m1
             in2 = M.member 3 m1
         assert $ not (in1 == in2)
+
+      test "catMaybes" do
+        let m1  = M.fromFoldable [Tuple 0 (Just 0), Tuple 1 Nothing, Tuple 2 (Just 2)]
+        assert $ (M.toUnfoldable (M.catMaybes m1)) == [Tuple 0 0, Tuple 2 2]
+
