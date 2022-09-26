@@ -5,6 +5,7 @@ import Prelude
 import Control.Alt ((<|>))
 import Control.Plus (empty)
 import Data.Array as A
+import Data.Either (Either(..))
 import Data.Foldable (and)
 import Data.Function (on)
 import Data.Maybe (Maybe(..))
@@ -269,3 +270,8 @@ main =
         let m1  = M.fromFoldable [Tuple 0 (Just 0), Tuple 1 Nothing, Tuple 2 (Just 2)]
         assert $ (M.toUnfoldable (M.catMaybes m1)) == [Tuple 0 0, Tuple 2 2]
 
+      test "separate" do
+        let m1              = M.fromFoldable [Tuple 0 (Left 0), Tuple 1 (Right 1), Tuple 2 (Left 2)]
+            { left, right } = M.separate m1
+        assert $ (M.toUnfoldable left) == [Tuple 0 0, Tuple 2 2]
+        assert $ (M.toUnfoldable right) == [Tuple 1 1]

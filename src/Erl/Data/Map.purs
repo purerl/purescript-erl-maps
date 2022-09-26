@@ -26,6 +26,7 @@ module Erl.Data.Map
   , member
   , singleton
   , size
+  , separate 
   , toUnfoldable
   , toUnfoldableUnordered
   , union
@@ -41,7 +42,7 @@ import Prelude
 import Control.Alt (class Alt)
 import Control.Plus (class Plus)
 import Data.Compactable (class Compactable)
-import Data.Either (either)
+import Data.Either (Either, either)
 import Data.Eq (class Eq1)
 import Data.Foldable (class Foldable, foldl, foldr)
 import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex)
@@ -262,11 +263,14 @@ instance applyMap :: Apply (Map k) where
 instance bindMap :: Bind (Map k) where
   bind m f = mapMaybeWithKey (\k -> lookup k <<< f) m
 
+separate :: forall k a b. Map k (Either a b) -> { left :: Map k a, right :: Map k b }
+separate m = { left:  m <#> either (Just) (const Nothing) # catMaybes
+                 , right: m <#> either (const Nothing) (Just) # catMaybes
+                 }
+
 instance compactMap :: Compactable (Map k) where
   compact = catMaybes 
-  separate f = { left:  f <#> either (Just) (const Nothing) # catMaybes
-               , right: f <#> either (const Nothing) (Just) # catMaybes
-               }
+  separate = separate 
 
 -- | Filter out those key/value pairs of a map for which a predicate
 -- | on the key fails to hold.
