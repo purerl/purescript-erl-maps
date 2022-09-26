@@ -275,3 +275,12 @@ main =
             { left, right } = M.separate m1
         assert $ (M.toUnfoldable left) == [Tuple 0 0, Tuple 2 2]
         assert $ (M.toUnfoldable right) == [Tuple 1 1]
+
+      test "union prefers the first argument" do
+        let m1  = M.fromFoldable [Tuple 0 1, Tuple 1 1, Tuple 2 1  {-     -}]
+            m2  = M.fromFoldable [Tuple 0 2, Tuple 1 2, {-     -}  Tuple 3 2]
+            m3  = M.union m1 m2
+            m4  = M.union m2 m1
+        assert $ not (m3 == m4)
+        assert $ (M.toUnfoldable m3) == [Tuple 0 1, Tuple 1 1, Tuple 2 1, Tuple 3 2]
+        assert $ (M.toUnfoldable m4) == [Tuple 0 2, Tuple 1 2, Tuple 2 1, Tuple 3 2]
