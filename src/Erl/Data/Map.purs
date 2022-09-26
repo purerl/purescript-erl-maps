@@ -42,8 +42,9 @@ import Prelude
 import Control.Alt (class Alt)
 import Control.Plus (class Plus)
 import Data.Compactable (class Compactable)
-import Data.Either (Either, either)
+import Data.Either (Either(..))
 import Data.Eq (class Eq1)
+import Data.Filterable (class Filterable)
 import Data.Foldable (class Foldable, foldl, foldr)
 import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex)
 import Data.Function.Uncurried (Fn2, Fn3, mkFn2, mkFn3)
@@ -269,13 +270,25 @@ instance bindMap :: Bind (Map k) where
 
 -- | Partitions the map into two parts, depending on the containing `Either` constructor.
 separate :: forall k a b. Map k (Either a b) -> { left :: Map k a, right :: Map k b }
-separate m = { left:  m <#> either (Just) (const Nothing) # catMaybes
-             , right: m <#> either (const Nothing) (Just) # catMaybes
-             }
+separate m = foldlWithIndex go { left: empty, right: empty } m
+  where
+    go i { left, right } (Left e)  = { left: insert i e left, right }
+    go i { left, right } (Right e) = { left, right: insert i e right }
 
 instance compactMap :: Compactable (Map k) where
   compact = catMaybes 
   separate = separate 
+
+instance filterableMap :: Filterable (Map k) where
+  partitionMap f m = separate (map f m)
+
+  partition f m = foldlWithIndex go { yes: empty, no: empty } m
+    where
+      go i { yes, no } e | f e = { yes: insert i e yes, no }
+      go i { yes, no } e       = { yes, no: insert i e no }
+
+  filterMap f m = catMaybes (map f m)
+  filter = filter
 
 -- | Filter out those key/value pairs of a map for which a predicate
 -- | on the key fails to hold. `true -> keep`.
