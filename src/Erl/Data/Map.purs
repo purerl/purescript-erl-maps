@@ -45,7 +45,8 @@ import Data.Compactable (class Compactable)
 import Data.Either (Either(..))
 import Data.Eq (class Eq1)
 import Data.Filterable (class Filterable)
-import Data.Foldable (class Foldable, foldl, foldr)
+import Data.Foldable (class Foldable)
+import Data.Foldable (foldl) as Foldable
 import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex)
 import Data.Function.Uncurried (Fn2, Fn3, mkFn2, mkFn3)
 import Data.FunctorWithIndex (class FunctorWithIndex)
@@ -107,7 +108,7 @@ mapMaybe = mapMaybeWithKey <<< const
 -- | Applies a function to each key/value pair in a map, discarding entries
 -- | where the function returns Nothing.
 mapMaybeWithKey :: forall k a b. (k -> a -> Maybe b) -> Map k a -> Map k b
-mapMaybeWithKey f = fold (\acc k a -> maybe acc (\b -> insert k b acc) (f k a)) empty
+mapMaybeWithKey f = foldl (\acc k a -> maybe acc (\b -> insert k b acc) (f k a)) empty
 
 -- | Filter a map of optional values, keeping only the key/value pairs which
 -- | contain a value, creating a new map.
@@ -146,7 +147,7 @@ unionWith f m1 m2 =
 -- | Compute the union of a collection of maps. Keeps the first value for conflicting keys.
 -- | Note: Now this function keeps the values from the first argument, to match Data.Map. Previously this function kept the values from the second argument.
 unions :: forall k v f. Foldable f => f (Map k v) -> Map k v
-unions = foldl union empty
+unions = Foldable.foldl union empty
 
 -- | Insert the value, delete a value, or update a value for a key in a map
 alter :: forall k v. (Maybe v -> Maybe v) -> k -> Map k v -> Map k v
@@ -166,16 +167,22 @@ update f k m = alter (maybe Nothing f) k m
 updateM :: forall k v m. Applicative m => (v -> m (Maybe v)) -> k -> Map k v -> m (Map k v)
 updateM f k m = alterM (maybe (pure Nothing) f) k m
 
-foreign import foldImpl :: forall a b z. (Fn3 a b z z) -> z -> Map a b -> z
--- | Fold the keys and values of a map
-fold :: forall a b z. (z -> a -> b -> z) -> z -> Map a b -> z
-fold f = foldImpl (mkFn3 \a b z -> f z a b)
+-- foreign import foldImpl :: forall a b z. (Fn3 a b z z) -> z -> Map a b -> z
+
+foreign import foldlImpl :: forall a b z. (Fn3 a b z z) -> z -> Map a b -> z
+foreign import foldrImpl :: forall a b z. (Fn3 a b z z) -> z -> Map a b -> z
+
+foldl :: forall a b z. (z -> a -> b -> z) -> z -> Map a b -> z
+foldl f = foldlImpl (mkFn3 \a b z -> f z a b)
+
+foldr :: forall a b z. (a -> b -> z -> z) -> z -> Map a b -> z
+foldr f = foldrImpl (mkFn3 \a b z -> f a b z)
 
 foreign import foldMImpl :: forall a b m z. (m -> (z -> m) -> m) -> (z -> a -> b -> m) -> m -> Map a b -> m
 -- | Fold the keys and values of a map, accumulating values using some
 -- | `Monoid`.
 foldMap :: forall a b m. Monoid m => (a -> b -> m) -> Map a b -> m
-foldMap f = fold (\acc k v -> f k v <> acc) mempty
+foldMap f = foldl (\acc k v -> f k v <> acc) mempty
 
 -- | Fold the keys and values of a map, accumulating values and effects in
 -- | some `Monad`.
@@ -185,12 +192,12 @@ foldM f z = foldMImpl bind f (pure z)
 -- | Convert any foldable collection of key/value pairs to a map.
 -- | On key collision, later values take precedence over earlier ones.
 fromFoldable :: forall f k v. Foldable f => f (Tuple k v) -> Map k v
-fromFoldable = foldl (\m (Tuple k v) -> insert k v m) empty
+fromFoldable = Foldable.foldl (\m (Tuple k v) -> insert k v m) empty
 
 -- | Convert any foldable collection of key/value pairs to a map.
 -- | On key collision, the values are configurably combined.
 fromFoldableWith :: forall f k v. Foldable f => (v -> v -> v) -> f (Tuple k v) -> Map k v
-fromFoldableWith f = foldl (\m (Tuple k v) -> alter (combine v) k m) empty where
+fromFoldableWith f vs = Foldable.foldl (\m (Tuple k v) -> alter (combine v) k m) empty vs where
   combine v (Just v') = Just $ f v v'
   combine v Nothing = Just v
 
@@ -231,17 +238,17 @@ instance monoidSemigroupMap :: Semigroup v  => Monoid (Map k v) where
   mempty = empty
 
 instance foldableMap :: Foldable (Map a) where
-  foldr f z m = foldr f z (values m)
-  foldl f = fold (\z _ -> f z)
-  foldMap f = foldMap (const f)
+  foldr f z m = foldr (\_ v acc -> f v acc) z m
+  foldl f z m = foldl (\acc _ v -> f acc v) z m
+  foldMap f = foldMap (\_ v -> f v)
 
 instance foldableWithIndexMap :: FoldableWithIndex a (Map a) where
-  foldrWithIndex f = fold (\b i a -> f i a b)
-  foldlWithIndex f = fold (\b i a -> f i b a)
+  foldrWithIndex f = foldr (\i v z -> f i v z)
+  foldlWithIndex f = foldl (\i z v -> f z i v)
   foldMapWithIndex = foldMap
 
 instance traversableMap :: Traversable (Map a) where
-  traverse f ms = fold (\acc k v -> flip (insert k) <$> acc <*> f v) (pure empty) ms
+  traverse f ms = foldl (\acc k v -> flip (insert k) <$> acc <*> f v) (pure empty) ms
   sequence = sequenceDefault
 
 instance functorWithIndexMap :: FunctorWithIndex a (Map a) where
