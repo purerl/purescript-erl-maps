@@ -5,6 +5,7 @@ import Prelude
 import Control.Alt ((<|>))
 import Control.Plus (empty)
 import Data.Array as A
+import Data.Either (Either(..))
 import Data.Foldable (and)
 import Data.Function (on)
 import Data.Maybe (Maybe(..))
@@ -264,3 +265,22 @@ main =
             in1 = M.member 1 m1
             in2 = M.member 3 m1
         assert $ not (in1 == in2)
+
+      test "catMaybes" do
+        let m1  = M.fromFoldable [Tuple 0 (Just 0), Tuple 1 Nothing, Tuple 2 (Just 2)]
+        assert $ (M.toUnfoldable (M.catMaybes m1)) == [Tuple 0 0, Tuple 2 2]
+
+      test "separate" do
+        let m1              = M.fromFoldable [Tuple 0 (Left 0), Tuple 1 (Right 1), Tuple 2 (Left 2)]
+            { left, right } = M.separate m1
+        assert $ (M.toUnfoldable left) == [Tuple 0 0, Tuple 2 2]
+        assert $ (M.toUnfoldable right) == [Tuple 1 1]
+
+      test "union prefers the first argument" do
+        let m1  = M.fromFoldable [Tuple 0 1, Tuple 1 1, Tuple 2 1  {-     -}]
+            m2  = M.fromFoldable [Tuple 0 2, Tuple 1 2, {-     -}  Tuple 3 2]
+            m3  = M.union m1 m2
+            m4  = M.union m2 m1
+        assert $ not (m3 == m4)
+        assert $ (M.toUnfoldable m3) == [Tuple 0 1, Tuple 1 1, Tuple 2 1, Tuple 3 2]
+        assert $ (M.toUnfoldable m4) == [Tuple 0 2, Tuple 1 2, Tuple 2 1, Tuple 3 2]
