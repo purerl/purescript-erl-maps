@@ -268,13 +268,19 @@ main =
 
       test "catMaybes" do
         let m1  = M.fromFoldable [Tuple 0 (Just 0), Tuple 1 Nothing, Tuple 2 (Just 2)]
-        assert $ (M.toUnfoldable (M.catMaybes m1)) == [Tuple 0 0, Tuple 2 2]
+        assertEqual { expected: M.toUnfoldable (M.catMaybes m1)
+                    , actual: [Tuple 0 0, Tuple 2 2]
+                    }
 
       test "separate" do
         let m1              = M.fromFoldable [Tuple 0 (Left 0), Tuple 1 (Right 1), Tuple 2 (Left 2)]
             { left, right } = M.separate m1
-        assert $ (M.toUnfoldable left) == [Tuple 0 0, Tuple 2 2]
-        assert $ (M.toUnfoldable right) == [Tuple 1 1]
+        assertEqual { expected: M.toUnfoldable left
+                    , actual: [Tuple 0 0, Tuple 2 2]
+                    }
+        assertEqual { expected: M.toUnfoldable right
+                    , actual: [Tuple 1 1]
+                    }
 
       test "union prefers the first argument" do
         let m1  = M.fromFoldable [Tuple 0 1, Tuple 1 1, Tuple 2 1  {-     -}]
@@ -282,5 +288,26 @@ main =
             m3  = M.union m1 m2
             m4  = M.union m2 m1
         assert $ not (m3 == m4)
-        assert $ (M.toUnfoldable m3) == [Tuple 0 1, Tuple 1 1, Tuple 2 1, Tuple 3 2]
-        assert $ (M.toUnfoldable m4) == [Tuple 0 2, Tuple 1 2, Tuple 2 1, Tuple 3 2]
+        assertEqual { actual: M.toUnfoldable m3
+                    , expected: [Tuple 0 1, Tuple 1 1, Tuple 2 1, Tuple 3 2]
+                    }
+        assertEqual { actual: M.toUnfoldable m4
+                    , expected: [Tuple 0 2, Tuple 1 2, Tuple 2 1, Tuple 3 2]
+                    }
+
+      test "fold is sorted" do
+        let m1  = M.fromFoldable [Tuple 0 "a", Tuple 1 "b", Tuple 2 "c"]
+            x1  = M.foldr (\_ a z -> a <> z) "" m1
+        assertEqual { actual: x1
+                    , expected: "abc"
+                    }
+        let m2  = M.fromFoldable [Tuple 2 "a", Tuple 1 "b", Tuple 0 "c"]
+            x2  = M.foldr (\_ a z -> a <> z) "" m2
+        assertEqual { actual: x2
+                    , expected: "cba"
+                    }
+        let m3  = M.fromFoldable [Tuple 1 "b", Tuple 0 "c", Tuple 2 "a"]
+            x3  = M.foldr (\_ a z -> a <> z) "" m3
+        assertEqual { actual: x3
+                    , expected: "cba"
+                    }
