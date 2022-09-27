@@ -10,6 +10,8 @@ module Erl.Data.Map
   , filterKeys
   , filterWithKey
   , foldM
+  , foldr
+  , foldl
   , fromFoldable
   , fromFoldableWith
   , fromFoldableWithIndex

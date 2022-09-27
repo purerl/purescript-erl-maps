@@ -295,3 +295,19 @@ main =
                     , expected: [Tuple 0 2, Tuple 1 2, Tuple 2 1, Tuple 3 2]
                     }
 
+      test "fold is sorted" do
+        let m1  = M.fromFoldable [Tuple 0 "a", Tuple 1 "b", Tuple 2 "c"]
+            x1  = M.foldr (\_ a z -> a <> z) "" m1
+        assertEqual { actual: x1
+                    , expected: "abc"
+                    }
+        let m2  = M.fromFoldable [Tuple 2 "a", Tuple 1 "b", Tuple 0 "c"]
+            x2  = M.foldr (\_ a z -> a <> z) "" m2
+        assertEqual { actual: x2
+                    , expected: "cba"
+                    }
+        let m3  = M.fromFoldable [Tuple 1 "b", Tuple 0 "c", Tuple 2 "a"]
+            x3  = M.foldr (\_ a z -> a <> z) "" m3
+        assertEqual { actual: x2
+                    , expected: "cba"
+                    }
