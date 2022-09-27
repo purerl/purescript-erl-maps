@@ -308,6 +308,6 @@ main =
                     }
         let m3  = M.fromFoldable [Tuple 1 "b", Tuple 0 "c", Tuple 2 "a"]
             x3  = M.foldr (\_ a z -> a <> z) "" m3
-        assertEqual { actual: x2
+        assertEqual { actual: x3
                     , expected: "cba"
                     }
