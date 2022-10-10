@@ -25,6 +25,7 @@ module Erl.Data.Map
   , mapMaybe
   , mapMaybeWithKey
   , mapWithKey
+  , mapKey 
   , member
   , singleton
   , size
@@ -101,6 +102,10 @@ foreign import mapWithKeyImpl :: forall k a b. (Fn2 k a b) -> Map k a -> Map k b
 
 mapWithKey :: forall k a b. (k -> a -> b) -> Map k a -> Map k b
 mapWithKey f = mapWithKeyImpl (mkFn2 f)
+
+-- | Applies a function to all keys. Preferring later values when the mapping is mapped to a duplicate.
+mapKey :: forall a b v. (a -> b) -> Map a v -> Map b v
+mapKey f m = fromFoldable (map (\(Tuple k v) -> Tuple (f k) v) (toAscArray  m))
 
 -- | Applies a function to each value in a map, discarding entries where the
 -- | function returns `Nothing`.

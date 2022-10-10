@@ -75,6 +75,13 @@ main =
                     , expected: singleton (Tuple 1 "abc")
                     }
 
+      test "mapKey prefers last value" do
+        let nums = M.fromFoldable [Tuple 0 "zero", Tuple 1 "what", Tuple 1 "one"]
+        let zero = M.mapKey (const 0) nums
+        assertEqual { actual: M.lookup 0 zero, expected: Just "one" }
+        assertEqual { actual: M.lookup 1 zero, expected: Nothing }
+        assertEqual { actual: M.size zero, expected: 1 }
+
       test "fromFoldable & key collision" do
         let nums = M.fromFoldable [Tuple 0 "zero", Tuple 1 "what", Tuple 1 "one"]
         assertEqual { actual: M.lookup 0 nums, expected: Just "zero" }
