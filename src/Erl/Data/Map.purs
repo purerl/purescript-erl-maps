@@ -185,7 +185,6 @@ foldl f = foldlImpl (mkFn3 \a b z -> f z a b)
 foldr :: forall a b z. (a -> b -> z -> z) -> z -> Map a b -> z
 foldr f = foldrImpl (mkFn3 \a b z -> f a b z)
 
-foreign import foldMImpl :: forall a b m z. (m -> (z -> m) -> m) -> (z -> a -> b -> m) -> m -> Map a b -> m
 -- | Fold the keys and values of a map, accumulating values using some
 -- | `Monoid`.
 foldMap :: forall a b m. Monoid m => (a -> b -> m) -> Map a b -> m
@@ -194,7 +193,7 @@ foldMap f = foldl (\acc k v -> f k v <> acc) mempty
 -- | Fold the keys and values of a map, accumulating values and effects in
 -- | some `Monad`.
 foldM :: forall a b m z. Monad m => (z -> a -> b -> m z) -> z -> Map a b -> m z
-foldM f z = foldMImpl bind f (pure z)
+foldM f z m = foldl (\acc k v -> acc >>= \a -> f a k v) (pure z) m
 
 -- | Convert any foldable collection of key/value pairs to a map.
 -- | On key collision, later values take precedence over earlier ones.

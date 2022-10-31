@@ -6,7 +6,6 @@
         , filterWithKeyImpl/2
         , foldlImpl/3
         , foldrImpl/3
-        , foldMImpl/4
         , insert/3
         , isEmpty/1
         , keys/1
@@ -49,11 +48,6 @@ unionWithImpl(F, M1, M2) -> maps:merge_with(fun (_K,A,B) -> F(A,B) end,M1,M2).
 mapImpl(F, M) -> maps:map(fun (_K, V) -> F(V) end, M).
 
 mapWithKeyImpl(F, M) -> maps:map(F, M).
-
-foldMImpl(Bind, F, MZ, M) ->
-    lists:foldl(fun (K, V, Acc) ->
-        (Bind(Acc))(fun (Z) -> ((F(Z))(K))(V) end)
-    end, MZ, lists:sort(maps:keys(M))).
 
 foldlImpl(F, Init, M) ->
     lists:foldl(fun (K, Z) ->

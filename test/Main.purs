@@ -6,7 +6,7 @@ import Control.Alt ((<|>))
 import Control.Plus (empty)
 import Data.Array as A
 import Data.Either (Either(..))
-import Data.Foldable (and)
+import Data.Foldable (and, foldM)
 import Data.Function (on)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..), fst, uncurry)
@@ -317,4 +317,18 @@ main =
             x3  = M.foldr (\_ a z -> a <> z) "" m3
         assertEqual { actual: x3
                     , expected: "cba"
+                    }
+
+      test "Data.Foldable.foldM doesn't crash" do
+        let m1  = M.fromFoldable [Tuple 0 "a", Tuple 1 "b", Tuple 2 "c"]
+        x1 <- foldM (\a b -> pure (a <> b)) "" m1
+        assertEqual { actual: x1
+                    , expected: "abc"
+                    }
+
+      test "Erl.Data.Map.foldM doesn't crash" do
+        let m1  = M.fromFoldable [Tuple 0 "a", Tuple 1 "b", Tuple 2 "c"]
+        x1 <- M.foldM (\a _ b -> pure (a <> b)) "" m1
+        assertEqual { actual: x1
+                    , expected: "abc"
                     }
