@@ -3,6 +3,7 @@ module Test.Main where
 import Prelude
 
 import Control.Alt ((<|>))
+import Control.Plus (empty)
 import Data.Array as A
 import Data.Foldable (and)
 import Data.Function (on)
@@ -139,12 +140,94 @@ main =
                     , expected: (M.lookup 1 m1 <|> M.lookup 1 m2)
                     }
 
+      test "UnionWith uses merge function" do
+        let m1 = M.fromFoldable [Tuple 0 0, Tuple 1 1, Tuple 2 2]
+            m2 = M.fromFoldable [Tuple 1 11, Tuple 2 12, Tuple 4 14]
+        assertEqual { actual: M.unionWith (\a b -> a * 100 + b) m1 m2
+                    , expected: M.fromFoldable [Tuple 0 0, Tuple 1 111, Tuple 2 212, Tuple 4 14]
+                    }
+
+      test "Unions prefers first" do
+        let m1 = M.fromFoldable [Tuple 1 1, Tuple 5 1]
+            m2 = M.fromFoldable [Tuple 2 2, Tuple 5 2]
+            m3 = M.fromFoldable [Tuple 3 3, Tuple 5 3]
+        assertEqual { actual: M.unions [m1, m2, m3]
+                    , expected: M.fromFoldable [Tuple 1 1, Tuple 2 2, Tuple 3 3, Tuple 5 3]
+                    }
+        assertEqual { actual: M.unions [m3, m2, m1]
+                    , expected: M.fromFoldable [Tuple 1 1, Tuple 2 2, Tuple 3 3, Tuple 5 1]
+                    }
+        assertEqual { actual: M.unions [m3, m1, m2]
+                    , expected: M.fromFoldable [Tuple 1 1, Tuple 2 2, Tuple 3 3, Tuple 5 2]
+                    }
+        assertEqual { actual: M.unions [m1, m2]
+                    , expected: M.fromFoldable [Tuple 1 1, Tuple 2 2, Tuple 5 2]
+                    }
+
+      -- alt is just union
+      test "Alt is idempotent" do
+        let m1 = M.fromFoldable [Tuple 0 0, Tuple 1 1, Tuple 2 2]
+            m2 = M.fromFoldable [Tuple 3 3, Tuple 1 0, Tuple 5 5]
+        assertEqual { actual: (m1 <|> m2)
+                    , expected: m1 <|> m2 <|> m2
+                    }
+
+      test "Alt prefers left" do
+        let m1 = M.fromFoldable [Tuple 0 0, Tuple 1 1, Tuple 2 2]
+            m2 = M.fromFoldable [Tuple 3 3, Tuple 1 1, Tuple 5 5]
+        assertEqual { actual: M.lookup 1 (m1 <|> m2)
+                    , expected: (M.lookup 1 m1 <|> M.lookup 1 m2)
+                    }
+
+      test "Plus empty is the empty map" do
+        assertEqual { actual: empty :: M.Map Int String
+                    , expected: M.empty
+                    }
+
+      test "Apply" do
+        let m1 = M.fromFoldable [Tuple 0 (_ + 10), Tuple 1 (_ + 10), Tuple 2 (_ + 20), Tuple 3 (_ + 20), Tuple 4 (_ + 20)]
+            m2 = M.fromFoldable [Tuple 4 4, Tuple 1 1, Tuple 5 5, Tuple 5 5]
+            m3 = M.fromFoldable [Tuple 1 11, Tuple 4 24]
+        assertEqual { actual: m1 <*> m2
+                    , expected: m3
+                    }
+
+      test "Bind" do
+        let f a = M.fromFoldable [Tuple a (a + 1), Tuple (a + 10) (a + 10)]
+            g _ = empty
+            h _ = M.fromFoldable [Tuple 4 14, Tuple 5 15, Tuple 6 16]
+            m1 = M.fromFoldable [Tuple 1 1, Tuple 5 5]
+        assertEqual { actual: m1 >>= f
+                    , expected: M.fromFoldable [Tuple 1 2, Tuple 5 6]
+                    }
+        assertEqual { actual: m1 >>= g
+                    , expected: M.empty :: M.Map Int String
+                    }
+        assertEqual { actual: m1 >>= h
+                    , expected: M.fromFoldable [Tuple 5 15]
+                    }
+
       test "difference" do
         let m1 = M.fromFoldable [Tuple 0 0, Tuple 1 1, Tuple 2 2]
             m2 = M.fromFoldable [Tuple 3 3, Tuple 1 1, Tuple 5 5]
             d  = M.difference m1 m2
-        assert (and (map (\k -> M.member 1 m1) (A.fromFoldable $ M.keys d)) &&
-                and (map (\k -> not $ M.member 1 d) (A.fromFoldable $ M.keys m2)))
+
+        assert (and (map (\_ -> M.member 1 m1) (A.fromFoldable $ M.keys d)) &&
+                and (map (\_ -> not $ M.member 1 d) (A.fromFoldable $ M.keys m2)))
+
+      test "intersection" do
+        let m1 = M.fromFoldable [Tuple 0 0, Tuple 1 1, Tuple 2 2]
+            m2 = M.fromFoldable [Tuple 3 "c", Tuple 1 "a", Tuple 5 "e"]
+        assertEqual { actual: M.intersection m1 m2
+                    , expected: M.fromFoldable [Tuple 1 1]
+                    }
+
+      test "intersectionWith" do
+        let m1 = M.fromFoldable [Tuple 0 0, Tuple 1 1, Tuple 2 2]
+            m2 = M.fromFoldable [Tuple 3 30, Tuple 1 10, Tuple 5 50]
+        assertEqual { actual: M.intersectionWith (+) m1 m2
+                    , expected: M.fromFoldable [Tuple 1 11]
+                    }
 
       test "size" do
         let xs = nubBy ((==) `on` fst) ((Tuple 1 41) : (Tuple 2 42) : nil)
@@ -161,7 +244,7 @@ main =
       test "filterKeys keeps those keys for which predicate is true" do
         let m1 = M.fromFoldable [Tuple 0 0, Tuple 1 1, Tuple 2 2]
         assert (A.all
-                 ((>) 2) (M.keys (M.filterKeys ((>) 2) m1))
+                 ((>) 2) (A.fromFoldable (M.keys (M.filterKeys ((>) 2) m1)))
                )
 
       test "Member" do

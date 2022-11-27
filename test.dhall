@@ -4,5 +4,5 @@ in    conf
     ⫽ { sources =
           conf.sources # [ "test/**/*.purs" ]
       , dependencies =
-          conf.dependencies # [ "assert", "console", "erl-test-eunit" ]
+          conf.dependencies # [ "assert", "erl-test-eunit", "arrays", "control", "effect", "foldable-traversable", "maybe"]
       }

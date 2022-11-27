@@ -2,6 +2,7 @@ module Erl.Data.Map
   ( Map
   , alter
   , alterM
+  , catMaybes
   , delete
   , difference
   , empty
@@ -14,25 +15,31 @@ module Erl.Data.Map
   , fromFoldableWithIndex
   , insert
   , insertWith
+  , intersection
+  , intersectionWith
   , isEmpty
   , keys
   , lookup
-  , mapWithKey
   , mapMaybe
   , mapMaybeWithKey
+  , mapWithKey
   , member
   , singleton
   , size
   , toUnfoldable
   , toUnfoldableUnordered
-  , values
+  , union
+  , unionWith
+  , unions
   , update
   , updateM
-  , union
+  , values
   ) where
 
 import Prelude
 
+import Control.Alt (class Alt)
+import Control.Plus (class Plus)
 import Data.Eq (class Eq1)
 import Data.Foldable (class Foldable, foldl, foldr)
 import Data.FoldableWithIndex (class FoldableWithIndex, foldlWithIndex)
@@ -96,9 +103,20 @@ mapMaybe = mapMaybeWithKey <<< const
 mapMaybeWithKey :: forall k a b. (k -> a -> Maybe b) -> Map k a -> Map k b
 mapMaybeWithKey f = fold (\acc k a -> maybe acc (\b -> insert k b acc) (f k a)) empty
 
+-- | Filter a map of optional values, keeping only the key/value pairs which
+-- | contain a value, creating a new map.
+catMaybes :: forall k v. Map k (Maybe v) -> Map k v
+catMaybes = mapMaybe identity
+
 foreign import member :: forall k a. k -> Map k a -> Boolean
 
 foreign import difference :: forall k a b. Map k a -> Map k b -> Map k a
+
+foreign import intersectionWithImpl :: forall k a b c. (Fn2 a b c) -> Map k a -> Map k b -> Map k c
+
+intersectionWith :: forall k a b c. (a -> b -> c) -> Map k a -> Map k b -> Map k c
+intersectionWith f m1 m2 =
+  intersectionWithImpl (mkFn2 f) m1 m2
 
 foreign import delete :: forall k a. k -> Map k a -> Map k a
 
@@ -107,6 +125,18 @@ foreign import values :: forall a b. Map a b -> List b
 foreign import keys :: forall a b. Map a b -> List a
 
 foreign import union :: forall k v. Map k v -> Map k v -> Map k v
+
+foreign import unionWithImpl :: forall k v. (Fn2 v v v) -> Map k v -> Map k v -> Map k v
+
+-- | Compute the union of two maps, using the specified function
+-- | to combine values for duplicate keys.
+unionWith :: forall k v. (v -> v -> v) -> Map k v -> Map k v -> Map k v
+unionWith f m1 m2 =
+  unionWithImpl (mkFn2 f) m1 m2
+
+-- | Compute the union of a collection of maps. Keeps the last value for conflicting keys.
+unions :: forall k v f. Foldable f => f (Map k v) -> Map k v
+unions = foldl union empty
 
 -- | Insert the value, delete a value, or update a value for a key in a map
 alter :: forall k v. (Maybe v -> Maybe v) -> k -> Map k v -> Map k v
@@ -212,6 +242,19 @@ instance showMap :: (Show k, Show v) => Show (Map k v) where
       toList :: forall k' v'. Map k' v' -> List (Tuple k' v')
       toList = toUnfoldable
 
+instance altMap :: Alt (Map k) where
+  alt = union
+
+instance plusMap :: Plus (Map k) where
+  empty = empty
+
+instance applyMap :: Apply (Map k) where
+  apply = intersectionWith identity
+
+instance bindMap :: Bind (Map k) where
+  bind m f = mapMaybeWithKey (\k -> lookup k <<< f) m
+
+
 -- | Filter out those key/value pairs of a map for which a predicate
 -- | on the key fails to hold.
 filterKeys :: forall k. (k -> Boolean) -> Map k ~> Map k
@@ -221,3 +264,8 @@ filterKeys predicate = filterWithKey $ const <<< predicate
 -- | on the value fails to hold.
 filter :: forall k v. (v -> Boolean) -> Map k v -> Map k v
 filter predicate = filterWithKey $ const predicate
+
+-- | Compute the intersection of two maps, preferring values from the first map in the case
+-- | of duplicate keys.
+intersection :: forall k a b. Map k a -> Map k b -> Map k a
+intersection = intersectionWith const
