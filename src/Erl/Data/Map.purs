@@ -216,6 +216,9 @@ instance ordMap :: (Ord k, Ord v) => Ord (Map k v) where
 instance semigroupMap :: Semigroup (Map k v) where
   append = union
 
+instance monoidMap :: Monoid (Map k v) where
+  mempty = empty
+
 instance foldableMap :: Foldable (Map a) where
   foldr f z m = foldr f z (values m)
   foldl f = fold (\z _ -> f z)
