@@ -229,7 +229,11 @@ instance eq1Map :: Eq k => Eq1 (Map k) where
   eq1 = eq
 
 instance eqMap :: (Eq k, Eq v) => Eq (Map k v) where
-  eq m1 m2 = toAscArray m1 == toAscArray m2
+  eq m1 m2 =
+    -- Optimization: toAscArray is expensive, avoid calculating it if the sizes are not the same.
+    case size m1 == size m2 of
+      true -> toAscArray m1 == toAscArray m2
+      false -> false
 
 instance ord1Map :: Ord k => Ord1 (Map k) where
   compare1 = compare
