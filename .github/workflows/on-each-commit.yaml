@@ -1,0 +1,15 @@
+on: [push]
+
+jobs:
+  run_tests:
+    runs-on: ubuntu-latest
+    container:
+      image: fredthedino/purerl:0.0.16
+    steps:
+      - uses: actions/checkout@v2
+      - name: 'Compile'
+        run: make all
+      - name: 'Test raw output'
+        run: make test
+      - name: 'Test (hacky-check)'
+        run: make test | grep "tests passed."

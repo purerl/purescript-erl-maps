@@ -4,8 +4,8 @@
         , intersectionWithImpl/3
         , empty/0
         , filterWithKeyImpl/2
-        , foldImpl/3
-        , foldMImpl/4
+        , foldlImpl/3
+        , foldrImpl/3
         , insert/3
         , isEmpty/1
         , keys/1
@@ -40,7 +40,8 @@ values(M) -> maps:values(M).
 
 keys(M) -> maps:keys(M).
 
-union(M1, M2) -> maps:merge(M1,M2).
+% [drathier]: intentional argument order swap; erl merge is right-biased, but we want it to be left-biased.
+union(M1, M2) -> maps:merge(M2,M1).
 
 unionWithImpl(F, M1, M2) -> maps:merge_with(fun (_K,A,B) -> F(A,B) end,M1,M2).
 
@@ -48,13 +49,18 @@ mapImpl(F, M) -> maps:map(fun (_K, V) -> F(V) end, M).
 
 mapWithKeyImpl(F, M) -> maps:map(F, M).
 
-foldMImpl(Bind, F, MZ, M) ->
-    maps:fold(fun (K, V, Acc) ->
-        (Bind(Acc))(fun (Z) -> ((F(Z))(K))(V) end)
-    end, MZ, M).
+foldlImpl(F, Init, M) ->
+    lists:foldl(fun (K, Z) ->
+        V = maps:get(K, M),
+        F(K, V, Z)
+    end, Init, lists:sort(maps:keys(M))).
 
-foldImpl(F, MZ, M) ->
-    maps:fold(F, MZ, M).
+foldrImpl(F, Init, M) ->
+    lists:foldr(fun (K, Z) ->
+        V = maps:get(K, M),
+        F(K, V, Z)
+    end, Init, lists:sort(maps:keys(M))).
+
 
 member(K, M) -> maps:is_key(K, M).
 

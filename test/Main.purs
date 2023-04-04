@@ -5,7 +5,8 @@ import Prelude
 import Control.Alt ((<|>))
 import Control.Plus (empty)
 import Data.Array as A
-import Data.Foldable (and)
+import Data.Either (Either(..))
+import Data.Foldable (and, foldM)
 import Data.Function (on)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..), fst, uncurry)
@@ -73,6 +74,13 @@ main =
         assertEqual { actual: M.toUnfoldable (M.singleton 1 "abc")
                     , expected: singleton (Tuple 1 "abc")
                     }
+
+      test "mapKey prefers last value" do
+        let nums = M.fromFoldable [Tuple 0 "zero", Tuple 1 "what", Tuple 1 "one"]
+        let zero = M.mapKey (const 0) nums
+        assertEqual { actual: M.lookup 0 zero, expected: Just "one" }
+        assertEqual { actual: M.lookup 1 zero, expected: Nothing }
+        assertEqual { actual: M.size zero, expected: 1 }
 
       test "fromFoldable & key collision" do
         let nums = M.fromFoldable [Tuple 0 "zero", Tuple 1 "what", Tuple 1 "one"]
@@ -152,16 +160,16 @@ main =
             m2 = M.fromFoldable [Tuple 2 2, Tuple 5 2]
             m3 = M.fromFoldable [Tuple 3 3, Tuple 5 3]
         assertEqual { actual: M.unions [m1, m2, m3]
-                    , expected: M.fromFoldable [Tuple 1 1, Tuple 2 2, Tuple 3 3, Tuple 5 3]
-                    }
-        assertEqual { actual: M.unions [m3, m2, m1]
                     , expected: M.fromFoldable [Tuple 1 1, Tuple 2 2, Tuple 3 3, Tuple 5 1]
                     }
-        assertEqual { actual: M.unions [m3, m1, m2]
+        assertEqual { actual: M.unions [m3, m2, m1]
+                    , expected: M.fromFoldable [Tuple 1 1, Tuple 2 2, Tuple 3 3, Tuple 5 3]
+                    }
+        assertEqual { actual: M.unions [m2, m1, m3]
                     , expected: M.fromFoldable [Tuple 1 1, Tuple 2 2, Tuple 3 3, Tuple 5 2]
                     }
         assertEqual { actual: M.unions [m1, m2]
-                    , expected: M.fromFoldable [Tuple 1 1, Tuple 2 2, Tuple 5 2]
+                    , expected: M.fromFoldable [Tuple 1 1, Tuple 2 2, Tuple 5 1]
                     }
 
       -- alt is just union
@@ -181,6 +189,11 @@ main =
 
       test "Plus empty is the empty map" do
         assertEqual { actual: empty :: M.Map Int String
+                    , expected: M.empty
+                    }
+
+      test "Monoid mempty is the empty map" do
+        assertEqual { actual: mempty :: M.Map Int String
                     , expected: M.empty
                     }
 
@@ -205,6 +218,13 @@ main =
                     }
         assertEqual { actual: m1 >>= h
                     , expected: M.fromFoldable [Tuple 5 15]
+                    }
+
+      test "Semigroup" do
+        let m1 = M.fromFoldable [Tuple 0 "a0", Tuple 1 "a1", Tuple 2 "a2"]
+            m2 = M.fromFoldable [Tuple 3 "b3", Tuple 1 "b1", Tuple 5 "b5"]
+        assertEqual { actual: m1 <> m2
+                    , expected: M.fromFoldable [Tuple 0 "a0", Tuple 1 "a1b1", Tuple 2 "a2", Tuple 3 "b3", Tuple 5 "b5"]
                     }
 
       test "difference" do
@@ -252,3 +272,63 @@ main =
             in1 = M.member 1 m1
             in2 = M.member 3 m1
         assert $ not (in1 == in2)
+
+      test "catMaybes" do
+        let m1  = M.fromFoldable [Tuple 0 (Just 0), Tuple 1 Nothing, Tuple 2 (Just 2)]
+        assertEqual { expected: M.toUnfoldable (M.catMaybes m1)
+                    , actual: [Tuple 0 0, Tuple 2 2]
+                    }
+
+      test "separate" do
+        let m1              = M.fromFoldable [Tuple 0 (Left 0), Tuple 1 (Right 1), Tuple 2 (Left 2)]
+            { left, right } = M.separate m1
+        assertEqual { expected: M.toUnfoldable left
+                    , actual: [Tuple 0 0, Tuple 2 2]
+                    }
+        assertEqual { expected: M.toUnfoldable right
+                    , actual: [Tuple 1 1]
+                    }
+
+      test "union prefers the first argument" do
+        let m1  = M.fromFoldable [Tuple 0 1, Tuple 1 1, Tuple 2 1  {-     -}]
+            m2  = M.fromFoldable [Tuple 0 2, Tuple 1 2, {-     -}  Tuple 3 2]
+            m3  = M.union m1 m2
+            m4  = M.union m2 m1
+        assert $ not (m3 == m4)
+        assertEqual { actual: M.toUnfoldable m3
+                    , expected: [Tuple 0 1, Tuple 1 1, Tuple 2 1, Tuple 3 2]
+                    }
+        assertEqual { actual: M.toUnfoldable m4
+                    , expected: [Tuple 0 2, Tuple 1 2, Tuple 2 1, Tuple 3 2]
+                    }
+
+      test "fold is sorted" do
+        let m1  = M.fromFoldable [Tuple 0 "a", Tuple 1 "b", Tuple 2 "c"]
+            x1  = M.foldr (\_ a z -> a <> z) "" m1
+        assertEqual { actual: x1
+                    , expected: "abc"
+                    }
+        let m2  = M.fromFoldable [Tuple 2 "a", Tuple 1 "b", Tuple 0 "c"]
+            x2  = M.foldr (\_ a z -> a <> z) "" m2
+        assertEqual { actual: x2
+                    , expected: "cba"
+                    }
+        let m3  = M.fromFoldable [Tuple 1 "b", Tuple 0 "c", Tuple 2 "a"]
+            x3  = M.foldr (\_ a z -> a <> z) "" m3
+        assertEqual { actual: x3
+                    , expected: "cba"
+                    }
+
+      test "Data.Foldable.foldM doesn't crash" do
+        let m1  = M.fromFoldable [Tuple 0 "a", Tuple 1 "b", Tuple 2 "c"]
+        x1 <- foldM (\a b -> pure (a <> b)) "" m1
+        assertEqual { actual: x1
+                    , expected: "abc"
+                    }
+
+      test "Erl.Data.Map.foldM doesn't crash" do
+        let m1  = M.fromFoldable [Tuple 0 "a", Tuple 1 "b", Tuple 2 "c"]
+        x1 <- M.foldM (\a _ b -> pure (a <> b)) "" m1
+        assertEqual { actual: x1
+                    , expected: "abc"
+                    }
